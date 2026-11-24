@@ -1,0 +1,221 @@
+import { ComponentCategory, Language } from '../types/game';
+
+export type EducationTopic = ComponentCategory | 'bios_uefi';
+
+export interface HardwareEducationEntry {
+  title: string;
+  subtitle: string;
+  functionDesc: string;
+  keySpecs: string;
+  compatibilityTip: string;
+  howToInstall: string;
+  commonMistake: string;
+}
+
+const EDUCATION_ID: Record<EducationTopic, HardwareEducationEntry> = {
+  case: {
+    title: 'Casing PC (Chassis)',
+    subtitle: 'Rumah & Aliran Udara Sistem',
+    functionDesc: 'Melindungi seluruh komponen internal, menjaga aliran udara dingin, dan menyalurkan tombol power panel depan ke motherboard.',
+    keySpecs: 'Form Factor (ITX / mATX / ATX), panjang maksimal GPU (mm), tinggi maksimal cooler.',
+    compatibilityTip: 'Ukuran motherboard tidak boleh melebihi dukungan casing, dan GPU panjang wajib dicek kelonggarannya.',
+    howToInstall: 'Letakkan casing di atas alas anti-statis (ESD), lalu buka panel kaca samping sebelum memasang hardware.',
+    commonMistake: 'Memasang GPU panjang ke casing mATX sempit atau lupa menutup panel sebelum uji stabilitas pengiriman.',
+  },
+  motherboard: {
+    title: 'Motherboard (Papan Induk)',
+    subtitle: 'Pusat Koneksi Seluruh Komponen',
+    functionDesc: 'Menghubungkan CPU, RAM, SSD, GPU, dan sumber daya PSU agar semua komponen dapat saling berkomunikasi.',
+    keySpecs: 'Soket CPU (LGA1200/LGA1700/AM4/AM5), Tipe RAM (DDR4/DDR5), slot M.2/SATA, versi BIOS.',
+    compatibilityTip: 'Soket motherboard dan generasi chipset/BIOS harus cocok dengan prosesor serta tipe DDR RAM.',
+    howToInstall: 'Sejajarkan lubang dudukan (standoff) pada tray casing lalu kencangkan baut memakai obeng.',
+    commonMistake: 'Menggunakan RAM DDR5 pada motherboard DDR4 atau lupa memasang kabel daya 24-pin ATX.',
+  },
+  cpu: {
+    title: 'CPU (Central Processing Unit)',
+    subtitle: 'Otak Pengolah Instruksi PC',
+    functionDesc: 'Menjalankan instruksi program, logika sistem operasi, game, dan pemrosesan data utama.',
+    keySpecs: 'Soket, jumlah core/thread, daya panas (TDP Watt), ada/tidaknya grafis terintegrasi (iGPU).',
+    compatibilityTip: 'CPU tanpa iGPU (seperti akhiran "F" atau Ryzen non-G) wajib memakai kartu grafis (GPU) terpisah agar tampil ke monitor.',
+    howToInstall: 'Buka tuas pengunci soket, letakkan CPU sejajar tanda segitiga emas tanpa menekan paksa, lalu tutup pengunci.',
+    commonMistake: 'Menutup pengunci sebelum CPU duduk rata atau lupa membuka tuas soket sebelum pemasangan.',
+  },
+  cooler: {
+    title: 'Pendingin CPU & Pasta Termal',
+    subtitle: 'Menjaga Suhu Prosesor Tetap Aman',
+    functionDesc: 'Menyerap panas dari permukaan logam CPU (IHS) melalui pasta termal dan membuangnya lewat sirip kipas atau radiator cair.',
+    keySpecs: 'Kapasitas TDP (Watt), dukungan soket, tinggi menara cooler (mm), tipe udara vs Liquid AIO.',
+    compatibilityTip: 'Pastikan kapasitas pendinginan (W) lebih besar dari TDP CPU agar tidak terjadi thermal throttling.',
+    howToInstall: 'Oleskan pasta termal tipis di tengah CPU, pasang bracket pendingin, kencangkan baut, dan colok kabel CPU_FAN.',
+    commonMistake: 'Lupa mengoleskan pasta termal atau lupa mencolok kabel CPU_FAN hingga suhu menembus 98°C saat POST.',
+  },
+  ram: {
+    title: 'RAM (Random Access Memory)',
+    subtitle: 'Memori Kerja Kecepatan Tinggi',
+    functionDesc: 'Menyimpan sementara data aplikasi yang sedang berjalan agar CPU bisa mengaksesnya jauh lebih cepat dibanding SSD.',
+    keySpecs: 'Generasi (DDR4 vs DDR5), kapasitas (GB), kecepatan (MHz), konfigurasi Dual-Channel.',
+    compatibilityTip: 'Memasang 2 keping RAM identik mengaktifkan Dual-Channel sehingga performa game & aplikasi meningkat signifikan.',
+    howToInstall: 'Tekan keping RAM ke slot DIMM hingga pengait klik menutup rata pada kedua sisi.',
+    commonMistake: 'Keping RAM tidak ditekan sampai bunyi klik (longgar) sehingga PC berbunyi 3 beep panjang dan layar mati.',
+  },
+  storage: {
+    title: 'Penyimpanan (NVMe SSD / SATA)',
+    subtitle: 'Tempat Sistem Operasi & Data Permanen',
+    functionDesc: 'Menyimpan Windows/Linux, driver, aplikasi, dan berkas pengguna secara permanen meski listrik dimatikan.',
+    keySpecs: 'Antarmuka (M.2 NVMe PCIe sangat cepat vs SATA), kapasitas (GB), jumlah slot motherboard.',
+    compatibilityTip: 'Drive SATA membutuhkan kabel data SATA ke motherboard dan kabel daya SATA dari PSU.',
+    howToInstall: 'Pasang SSD NVMe ke slot M.2 atau taruh SSD SATA di rak drive lalu sambungkan kabel data & dayanya.',
+    commonMistake: 'Lupa membuat serta memformat partisi System saat instalasi Windows/Linux.',
+  },
+  gpu: {
+    title: 'GPU (Graphics Processing Unit)',
+    subtitle: 'Pengolah Grafis 3D & Tampilan Layar',
+    functionDesc: 'Merender gambar, antarmuka 3D, video, dan akselerasi game ke monitor beresolusi tinggi.',
+    keySpecs: 'Skor performa, panjang fisik kartu (mm), kebutuhan daya tambahan (6/8-pin PCIe).',
+    compatibilityTip: 'Cek panjang GPU terhadap ruang casing serta kecukupan konektor daya PCIe pada PSU.',
+    howToInstall: 'Tancapkan GPU ke slot PCIe x16 teratas, baut bracket belakangnya, dan pasang kabel daya PCIe jika diperlukan.',
+    commonMistake: 'Lupa mencolok kabel daya PCIe GPU atau memasang kabel monitor ke motherboard saat memakai CPU tanpa iGPU.',
+  },
+  psu: {
+    title: 'PSU (Power Supply Unit)',
+    subtitle: 'Jantung Penyalur Daya Listrik PC',
+    functionDesc: 'Mengubah listrik AC dari stopkontak menjadi arus DC stabil (+12V, +5V, +3.3V) untuk seluruh komponen PC.',
+    keySpecs: 'Kapasitas Watt, efisiensi (80+ Bronze/Gold), jumlah konektor daya PCIe.',
+    compatibilityTip: 'Pilih PSU minimal 30-35% di atas estimasi total daya sistem agar tetap dingin, awet, dan stabil.',
+    howToInstall: 'Pasang PSU di ruang bawah casing lalu hubungkan kabel 24-pin ATX (motherboard), 8-pin EPS (CPU), dan SATA.',
+    commonMistake: 'Lupa menyambungkan kabel 8-pin EPS CPU sehingga kipas berputar tetapi layar tidak mau menyala (No POST).',
+  },
+  fan: {
+    title: 'Kipas Casing (Case Fan)',
+    subtitle: 'Sirkulasi Udara Masuk & Keluar',
+    functionDesc: 'Memasukkan udara segar dari depan casing dan membuang udara panas dari bagian belakang/atas.',
+    keySpecs: 'Diameter (120mm / 140mm), konektor PWM 4-pin.',
+    compatibilityTip: 'Aliran udara seimbang menjaga suhu GPU & VRM tetap rendah saat uji benchmark beban penuh.',
+    howToInstall: 'Pasang kipas di dudukan depan/belakang lalu hubungkan ke header CHA_FAN / SYS_FAN.',
+    commonMistake: 'Kipas terpasang tetapi kabel PWM lupa disambungkan.',
+  },
+  consumable: {
+    title: 'Bahan Habis Pakai (Pasta Termal)',
+    subtitle: 'Penghantar Panas Mikroskopis',
+    functionDesc: 'Mengisi celah udara mikro antara tutup logam CPU dan pelat tembaga pendingin agar panas berpindah optimal.',
+    keySpecs: 'Konduktivitas termal tinggi, non-konduktif listrik.',
+    compatibilityTip: 'Pasta termal yang kering pada PC lama sering menjadi penyebab utama komputer mati mendadak karena overheat.',
+    howToInstall: 'Bersihkan sisa pasta lama, lalu oleskan pasta baru seukuran biji kacang sebelum memasang heatsink.',
+    commonMistake: 'Memasang heatsink langsung ke CPU tanpa pasta termal.',
+  },
+  bios_uefi: {
+    title: 'POST, BIOS/UEFI & Instalasi OS',
+    subtitle: 'Menghidupkan Jiwa Perangkat Keras',
+    functionDesc: 'POST memeriksa kesehatan hardware saat tombol power ditekan; BIOS/UEFI mengatur urutan boot & profil RAM XMP sebelum masuk OS.',
+    keySpecs: 'Mode UEFI Native (modern), urutan Boot Priority (USB di urutan #1 saat instal OS), Partisi EFI + System.',
+    compatibilityTip: 'Saat instalasi OS baru, pasang USB Bootable, atur USB sebagai Boot #1 di BIOS, buat partisi EFI + System lalu format.',
+    howToInstall: 'Setelah OS selesai diinstal, pasang seluruh 6 kategori driver lalu jalankan Uji Stabilitas Benchmark.',
+    commonMistake: 'Membiarkan mode BIOS di Legacy CSM atau mencoba instal OS pada partisi System yang belum diformat.',
+  },
+};
+
+const EDUCATION_EN: Record<EducationTopic, HardwareEducationEntry> = {
+  case: {
+    title: 'PC Case (Chassis)',
+    subtitle: 'Structure, Protection & Airflow',
+    functionDesc: 'Houses internal hardware securely, channels cool intake airflow, and provides front-panel power/USB headers.',
+    keySpecs: 'Form factor support (ITX/mATX/ATX), max GPU length (mm), max cooler height (mm).',
+    compatibilityTip: 'Ensure motherboard form factor and GPU length stay within case limits.',
+    howToInstall: 'Place the case on the ESD mat and remove the tempered glass side panel before installing parts.',
+    commonMistake: 'Forgetting to close the side panel before final delivery inspection.',
+  },
+  motherboard: {
+    title: 'Motherboard',
+    subtitle: 'Central Hardware Backbone',
+    functionDesc: 'Connects CPU, RAM, storage, GPU, and PSU power rails so every component communicates cleanly.',
+    keySpecs: 'CPU socket (LGA1200/LGA1700/AM4/AM5), RAM generation (DDR4/DDR5), M.2/SATA ports, BIOS version.',
+    compatibilityTip: 'Match CPU socket, supported generation, BIOS version, and RAM DDR type.',
+    howToInstall: 'Align over chassis standoffs and fasten mounting screws with a screwdriver.',
+    commonMistake: 'Mixing DDR4 and DDR5 modules or forgetting the 24-pin ATX power cable.',
+  },
+  cpu: {
+    title: 'CPU (Processor)',
+    subtitle: 'Primary Compute Engine',
+    functionDesc: 'Executes OS instructions, applications, physics, and logic workloads.',
+    keySpecs: 'Socket, TDP wattage, integrated graphics (iGPU) availability, performance score.',
+    compatibilityTip: 'CPUs without integrated graphics require a discrete GPU to output video.',
+    howToInstall: 'Lift socket lever, align triangle corner, seat CPU gently without force, and lock retention arm.',
+    commonMistake: 'Leaving the socket retention arm open when powering on.',
+  },
+  cooler: {
+    title: 'CPU Cooler & Thermal Paste',
+    subtitle: 'Heat Dissipation System',
+    functionDesc: 'Transfers heat away from the CPU integrated heat spreader into fin stacks or liquid radiators.',
+    keySpecs: 'Cooling capacity (W), socket brackets, height (mm), fan RPM.',
+    compatibilityTip: 'Choose a cooler rated higher than the CPU TDP to prevent thermal throttling.',
+    howToInstall: 'Apply fresh thermal paste onto CPU IHS, mount cooler tightly, and plug in the CPU_FAN header.',
+    commonMistake: 'Forgetting thermal paste or leaving CPU_FAN unplugged, causing a 98°C thermal shutdown.',
+  },
+  ram: {
+    title: 'RAM (System Memory)',
+    subtitle: 'High-Speed Working Memory',
+    functionDesc: 'Temporarily stores active OS and application data for ultra-fast CPU access.',
+    keySpecs: 'DDR4 vs DDR5 type, capacity (GB), clock speed (MHz), Dual-Channel pairing.',
+    compatibilityTip: 'Installing 2 matched sticks enables Dual-Channel mode for higher gaming and benchmark scores.',
+    howToInstall: 'Align the key notch and press firmly until both DIMM latches snap shut.',
+    commonMistake: 'Unseated loose RAM triggers 3 long POST beeps and no display.',
+  },
+  storage: {
+    title: 'Storage (NVMe SSD / SATA)',
+    subtitle: 'Permanent OS & Data Drive',
+    functionDesc: 'Stores the operating system, drivers, games, and files persistently.',
+    keySpecs: 'Interface (NVMe M.2 vs SATA), capacity (GB), motherboard slot availability.',
+    compatibilityTip: 'SATA drives require both a SATA data cable and a SATA power cable.',
+    howToInstall: 'Mount M.2 NVMe or SATA bay drive and connect data/power cables.',
+    commonMistake: 'Attempting OS installation before creating and formatting a System partition.',
+  },
+  gpu: {
+    title: 'Graphics Card (GPU)',
+    subtitle: '3D Rendering & Video Output',
+    functionDesc: 'Renders 3D graphics, video acceleration, and display output to the monitor.',
+    keySpecs: 'Card length (mm), performance score, PCIe auxiliary power pin count.',
+    compatibilityTip: 'Check case GPU clearance and ensure your PSU provides enough wattage and PCIe pins.',
+    howToInstall: 'Insert into the primary PCIe x16 slot, screw the rear bracket, and plug PCIe power.',
+    commonMistake: 'Leaving PCIe GPU power unplugged, resulting in NO DISPLAY at POST.',
+  },
+  psu: {
+    title: 'Power Supply Unit (PSU)',
+    subtitle: 'Stable DC Power Delivery',
+    functionDesc: 'Converts wall AC power into regulated +12V, +5V, and +3.3V rails.',
+    keySpecs: 'Wattage capacity, PCIe power connectors.',
+    compatibilityTip: 'Keep ~35% headroom above estimated system load for stability.',
+    howToInstall: 'Mount PSU in shroud and connect 24-pin ATX, 8-pin EPS CPU, and SATA power cables.',
+    commonMistake: 'Missing 8-pin CPU power cable causes instant power failure on boot.',
+  },
+  fan: {
+    title: 'Case Fans',
+    subtitle: 'Intake & Exhaust Airflow',
+    functionDesc: 'Moves cool air across motherboard VRMs and GPU heatsinks.',
+    keySpecs: 'Fan count and PWM motherboard fan header connection.',
+    compatibilityTip: 'Good airflow keeps benchmark temperatures well below throttling thresholds.',
+    howToInstall: 'Connect case fan PWM headers during Stage 9 cabling.',
+    commonMistake: 'Leaving chassis fan headers disconnected.',
+  },
+  consumable: {
+    title: 'Thermal Compound',
+    subtitle: 'Microscopic Heat Interface',
+    functionDesc: 'Fills microscopic air gaps between CPU IHS and cooler coldplate.',
+    keySpecs: 'High thermal conductivity.',
+    compatibilityTip: 'Old dried paste is a frequent cause of customer overheating complaints.',
+    howToInstall: 'Always apply paste before locking down a cooler.',
+    commonMistake: 'Mounting a cooler dry without thermal paste.',
+  },
+  bios_uefi: {
+    title: 'POST, BIOS/UEFI & OS Setup',
+    subtitle: 'Hardware Initialization & Software',
+    functionDesc: 'POST checks hardware health; BIOS/UEFI sets boot order and XMP before OS Setup partitions and installs the OS.',
+    keySpecs: 'UEFI Mode, Boot Priority (USB #1 for clean install), EFI + Formatted System partitions.',
+    compatibilityTip: 'Insert USB Bootable media, put USB at Boot #1 in BIOS, partition & format drive, install OS, then all 6 drivers.',
+    howToInstall: 'Finish with a full Benchmark & Stability run.',
+    commonMistake: 'Leaving BIOS in Legacy CSM mode or skipping driver installation.',
+  },
+};
+
+export function getEducationEntry(topic: EducationTopic, lang: Language): HardwareEducationEntry {
+  return lang === 'en' ? EDUCATION_EN[topic] : EDUCATION_ID[topic];
+}

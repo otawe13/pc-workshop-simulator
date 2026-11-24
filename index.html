@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="id" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <script>
+      (function () {
+        try {
+          var d = Object.getOwnPropertyDescriptor(window, 'fetch');
+          if (d && d.configurable && typeof d.get === 'function' && !d.set) {
+            var getter = d.get;
+            var customFetch;
+            Object.defineProperty(window, 'fetch', {
+              configurable: true,
+              enumerable: d.enumerable,
+              get: function () {
+                return customFetch || getter.call(window);
+              },
+              set: function (fn) {
+                if (typeof fn === 'function') customFetch = fn;
+              },
+            });
+          }
+        } catch (_e) {}
+        window.addEventListener(
+          'error',
+          function (ev) {
+            if (
+              ev &&
+              typeof ev.filename === 'string' &&
+              ev.filename.indexOf('chrome-extension://') === 0 &&
+              typeof ev.message === 'string' &&
+              ev.message.indexOf('Cannot set property fetch') !== -1
+            ) {
+              ev.preventDefault();
+              ev.stopImmediatePropagation();
+            }
+          },
+          true
+        );
+      })();
+    </script>
+    <title>PC Workshop Simulator — Edisi Bisnis Utama</title>
+    <meta name="description" content="Simulator bengkel rakit & perbaikan PC 3D dengan pengecekan kompatibilitas hardware, BIOS, instalasi OS, ekonomi Rupiah, dan Papan Peringkat." />
+    <meta property="og:title" content="PC Workshop Simulator — Edisi Bisnis Utama" />
+    <meta property="og:description" content="Rakit, perbaiki, kelola bisnis bengkel komputer 3D lengkap berbahasa Indonesia." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  </head>
+  <body class="bg-[#090d16] text-slate-100 antialiased selection:bg-sky-500/30 selection:text-sky-100 overflow-hidden" data-state="title">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

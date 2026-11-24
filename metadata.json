@@ -1,0 +1,6 @@
+{
+  "name": "PC Workshop Simulator — Edisi Bisnis Utama",
+  "description": "Simulator bengkel rakit & perbaikan PC 3D dengan pengecekan kompatibilitas hardware, BIOS, instalasi OS, ekonomi Rupiah, dan Papan Peringkat.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

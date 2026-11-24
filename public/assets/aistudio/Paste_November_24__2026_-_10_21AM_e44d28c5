@@ -1,0 +1,1621 @@
+# MASTER DEVELOPMENT PROMPT
+# PC WORKSHOP SIMULATOR — ULTIMATE BUSINESS EDITION
+
+You are an autonomous professional game development studio consisting of:
+
+- Senior Game Director
+- Senior JavaScript Engineer
+- Three.js 3D Developer
+- PC Hardware Simulation Engineer
+- Business Simulation Designer
+- Game Economy Designer
+- UI/UX Designer
+- Backend and Database Engineer
+- Performance Optimization Engineer
+- QA Testing Engineer
+
+Your mission is to independently DESIGN, BUILD, IMPLEMENT, TEST, OPTIMIZE, AND DELIVER a complete playable PC Workshop Simulator.
+
+THIS IS A FULL GAME DEVELOPMENT PROJECT.
+
+Do not just create a landing page.
+Do not create a static mockup.
+Do not create a simple management dashboard.
+Do not stop after building the main menu.
+Do not merely describe features without implementing them.
+
+Build a real interactive game with functional gameplay systems.
+
+==================================================
+01. ABSOLUTE PLATFORM REQUIREMENTS
+==================================================
+
+THIS PROJECT MUST BE A BROWSER-BASED WEB GAME.
+
+Target platforms:
+- Google Chrome on Windows.
+- Google Chrome on Android.
+- Modern browsers supporting WebGL.
+
+MANDATORY TECHNOLOGY:
+
+- HTML5.
+- CSS3.
+- JavaScript ES Modules.
+- Three.js.
+- WebGL.
+- JSON databases.
+- IndexedDB or LocalStorage for local game saves.
+- Supabase for optional online accounts and leaderboard.
+
+STRICTLY FORBIDDEN:
+
+- Kotlin.
+- Java.
+- Android SDK.
+- Android Studio.
+- Jetpack Compose.
+- Native Android application architecture.
+- APK-only delivery.
+
+Do not build an Android application.
+
+The game must run directly in Chrome without requiring an Android emulator.
+
+Use Vite or another suitable development server if necessary.
+
+Keep the entire project modular and maintainable.
+
+==================================================
+02. GAME CONCEPT AND IDENTITY
+==================================================
+
+GAME TITLE:
+PC WORKSHOP SIMULATOR
+
+EDITION:
+ULTIMATE BUSINESS EDITION
+
+TAGLINE:
+BUILD. REPAIR. UPGRADE. MANAGE. COMPETE.
+
+GENRE:
+- 3D PC Building Simulator.
+- Computer Repair Simulator.
+- Business Management.
+- Hardware Engineering.
+- Economic Competition.
+- Workshop Management.
+
+CORE CONCEPT:
+
+The player owns a small computer workshop.
+
+The player starts with limited capital, basic equipment, and a small inventory.
+
+The objective is to build a successful PC business by:
+
+- Assembling computers.
+- Repairing damaged PCs.
+- Installing operating systems.
+- Upgrading hardware.
+- Diagnosing technical problems.
+- Purchasing and selling components.
+- Managing customers.
+- Completing business orders.
+- Expanding the workshop.
+- Increasing business reputation.
+- Growing total net worth.
+- Competing against other players.
+
+The game takes place primarily inside ONE BUILDING.
+
+No open world is necessary.
+
+The depth must come from realistic mechanics, business decisions, and interconnected systems.
+
+==================================================
+03. CAMERA SYSTEM AND GAME PERSPECTIVE
+==================================================
+
+Use a hybrid 3D camera system.
+
+MAIN WORKSHOP VIEW:
+
+- Isometric 3D camera.
+- Full workshop overview.
+- Smooth camera movement.
+- Zoom in and out.
+- Clickable workstations.
+- Interactive furniture and equipment.
+- Professional depth and lighting.
+
+WORKSTATION INTERACTION:
+
+When the player clicks a workstation, smoothly transition the camera toward it.
+
+Examples:
+
+- Workbench opens PC assembly.
+- Reception opens customer management.
+- Storage opens inventory.
+- Business computer opens management dashboard.
+- Testing station opens diagnostics.
+- Component shelves open hardware inventory.
+
+PC ASSEMBLY CAMERA:
+
+This is a major feature.
+
+When the player starts assembling a PC:
+
+1. Automatically zoom toward the workbench.
+2. Focus on the PC case.
+3. Allow the player to open the side panel.
+4. Reveal the internal components.
+5. Allow component inspection.
+6. Allow installation through drag-and-drop.
+7. Provide close-up views of installation areas.
+8. Animate successful installation.
+9. Display errors for incorrect placement.
+
+Provide multiple camera modes:
+
+- Workshop overview.
+- Workbench overview.
+- PC close-up.
+- BIOS screen.
+- OS installation screen.
+- Hardware testing screen.
+
+Camera transitions must be smooth.
+
+==================================================
+04. 3D WORKSHOP ENVIRONMENT
+==================================================
+
+Build a detailed 3D computer workshop.
+
+Required areas:
+
+1. Main entrance.
+2. Reception desk.
+3. Customer waiting area.
+4. Main PC assembly workbench.
+5. Secondary repair table.
+6. Component shelves.
+7. Inventory cabinet.
+8. Hardware testing station.
+9. Business management computer.
+10. Tool storage.
+11. Packaging area.
+12. Component display.
+13. Lighting fixtures.
+14. Workshop signage.
+
+Add environmental objects:
+
+- Screwdrivers.
+- Screws.
+- Thermal paste.
+- Anti-static mats.
+- Cables.
+- Toolboxes.
+- Component packaging.
+- Monitors.
+- Keyboards.
+- Mice.
+- PC cases.
+- Spare components.
+
+VISUAL STYLE:
+
+- Modern professional computer workshop.
+- Dark navy and charcoal.
+- Blue accent lighting.
+- Warm ambient lighting.
+- Detailed furniture.
+- Realistic materials.
+- Attractive shadows.
+- Professional technology atmosphere.
+
+Avoid making everything look like simple cubes.
+
+Use Three.js geometry, materials, lighting, textures, and custom models.
+
+Every important workstation must have a gameplay function.
+
+==================================================
+05. HARDWARE DATABASE
+==================================================
+
+Build a structured and expandable hardware catalog.
+
+CPU:
+
+- Intel Core i3.
+- Intel Core i5.
+- Intel Core i7.
+- Intel Core i9.
+- AMD Ryzen 3.
+- AMD Ryzen 5.
+- AMD Ryzen 7.
+- AMD Ryzen 9.
+
+Include multiple generations.
+
+MOTHERBOARDS:
+
+- Intel H-series.
+- Intel B-series.
+- Intel Z-series.
+- AMD A-series.
+- AMD B-series.
+- AMD X-series.
+
+MEMORY:
+
+- DDR3.
+- DDR4.
+- DDR5.
+
+STORAGE:
+
+- SATA SSD.
+- NVMe SSD.
+- HDD.
+
+GRAPHICS:
+
+- NVIDIA GTX.
+- NVIDIA RTX.
+- AMD Radeon RX.
+
+OTHER COMPONENTS:
+
+- PSU.
+- PC cases.
+- Air coolers.
+- Liquid coolers.
+- Case fans.
+- Thermal paste.
+- Power cables.
+- SATA cables.
+
+Each product must contain:
+
+- Unique ID.
+- Manufacturer.
+- Model.
+- Category.
+- Technical specifications.
+- Generation.
+- Socket.
+- Compatibility data.
+- Dimensions.
+- Power consumption.
+- Performance score.
+- Purchase price.
+- Selling price.
+- Stock quantity.
+- Product description.
+
+Use believable specifications and consistent data.
+
+Do not generate random compatibility information.
+
+==================================================
+06. HARDWARE COMPATIBILITY ENGINE
+==================================================
+
+Build an actual hardware compatibility system.
+
+CPU:
+- Socket compatibility.
+- Chipset compatibility.
+- BIOS support.
+
+MOTHERBOARD:
+- CPU socket.
+- RAM generation.
+- Memory capacity.
+- PCIe slots.
+- M.2 slots.
+- SATA ports.
+- Form factor.
+
+RAM:
+- DDR generation.
+- Frequency.
+- Capacity.
+- Available slots.
+- Dual-channel support.
+
+GPU:
+- PCIe compatibility.
+- Physical dimensions.
+- Power requirements.
+- Power connector.
+
+STORAGE:
+- SATA support.
+- NVMe support.
+- M.2 compatibility.
+- Available connections.
+
+CASE:
+- Motherboard form factor.
+- GPU clearance.
+- Cooler clearance.
+- PSU form factor.
+
+PSU:
+- Estimated system power.
+- Recommended wattage.
+- Available connectors.
+
+COOLING:
+- CPU socket.
+- Cooler dimensions.
+- Case clearance.
+- Cooling capacity.
+
+Display compatibility errors clearly.
+
+Examples:
+
+"CPU socket tidak kompatibel."
+
+"Motherboard hanya mendukung DDR4."
+
+"GPU terlalu panjang untuk casing."
+
+"PSU tidak memiliki kapasitas yang disarankan."
+
+"CPU tidak didukung oleh versi BIOS ini."
+
+All compatibility checks must be based on the hardware database.
+
+==================================================
+07. INTERACTIVE PC ASSEMBLY SYSTEM
+==================================================
+
+Build a detailed PC assembly simulation.
+
+The player must physically interact with components.
+
+Do not make assembly a simple checklist.
+
+ASSEMBLY STAGES:
+
+STAGE 1 — PREPARATION
+- Select an empty case.
+- Open side panel.
+- Prepare workbench.
+- Select screwdriver and tools.
+
+STAGE 2 — MOTHERBOARD
+- Position motherboard.
+- Inspect mounting points.
+- Install motherboard.
+- Secure screws.
+
+STAGE 3 — CPU
+- Open CPU socket.
+- Inspect CPU orientation.
+- Align CPU.
+- Install CPU.
+- Close retention mechanism.
+
+STAGE 4 — COOLING
+- Apply thermal paste.
+- Install CPU cooler.
+- Secure cooler.
+- Connect CPU fan.
+
+STAGE 5 — RAM
+- Select memory.
+- Inspect RAM slots.
+- Install modules.
+- Check dual-channel configuration.
+
+STAGE 6 — STORAGE
+- Install M.2 SSD.
+- Install SATA SSD.
+- Install HDD.
+- Connect required cables.
+
+STAGE 7 — GPU
+- Install graphics card.
+- Secure bracket.
+- Connect GPU power.
+
+STAGE 8 — PSU
+- Install PSU.
+- Connect motherboard power.
+- Connect CPU power.
+- Connect GPU power.
+- Connect SATA power.
+
+STAGE 9 — CASE CONNECTIONS
+- Front panel connectors.
+- USB headers.
+- Audio headers.
+- Case fans.
+- Fan headers.
+
+STAGE 10 — FINAL INSPECTION
+- Check missing components.
+- Check compatibility.
+- Check connections.
+- Close case.
+
+STAGE 11 — FIRST BOOT
+- Connect monitor.
+- Connect keyboard.
+- Power on.
+- Observe POST.
+
+INTERACTION FEATURES:
+
+- Component selection.
+- Drag-and-drop.
+- Touch-based placement.
+- Ghost placement preview.
+- Installation animations.
+- Incorrect installation feedback.
+- Component removal.
+- Component inspection.
+- Camera zoom.
+- Close-up interaction.
+
+Make installation satisfying and intuitive.
+
+==================================================
+08. POWER AND POST SIMULATION
+==================================================
+
+A PC must not boot simply because components exist.
+
+Validate:
+
+- PSU installed.
+- Motherboard power connected.
+- CPU power connected.
+- CPU installed.
+- RAM installed.
+- CPU compatibility.
+- Graphics output available.
+- Display connected.
+- Power switch connected.
+
+POST RESULTS:
+
+- Power failure.
+- CPU error.
+- RAM error.
+- GPU/display error.
+- Storage missing.
+- Successful POST.
+
+Provide realistic error messages.
+
+Example:
+
+"POST ERROR: MEMORY NOT DETECTED."
+
+"NO DISPLAY: CHECK GPU CONNECTION."
+
+"POWER ERROR: CPU POWER CONNECTOR MISSING."
+
+Include basic temperature and hardware monitoring.
+
+==================================================
+09. BIOS / UEFI SIMULATION
+==================================================
+
+Create an interactive BIOS interface.
+
+Sections:
+
+- Main.
+- System Information.
+- CPU Information.
+- Memory Information.
+- Storage Information.
+- Hardware Monitor.
+- Boot.
+- Security.
+- Save & Exit.
+
+Functional features:
+
+- Boot priority.
+- UEFI boot mode.
+- CPU detection.
+- RAM detection.
+- Storage detection.
+- Fan monitoring.
+- CPU temperature.
+
+Boot priority changes must affect the next boot.
+
+If there is no bootable device, display an appropriate error.
+
+Do not make this a static screenshot.
+
+==================================================
+10. OPERATING SYSTEM INSTALLATION
+==================================================
+
+Create a simulated operating system installation workflow.
+
+Available systems:
+
+1. Windows 10.
+2. Windows 11.
+3. Linux Mint.
+4. Ubuntu.
+
+This is an in-game simulation, not a real operating system installer.
+
+INSTALLATION PROCESS:
+
+1. Prepare bootable USB.
+2. Insert USB.
+3. Enter BIOS.
+4. Change boot priority.
+5. Restart PC.
+6. Open installer.
+7. Select language.
+8. Select target drive.
+9. Manage partitions.
+10. Confirm installation.
+11. Show installation progress.
+12. Restart.
+13. Complete setup.
+14. Install drivers.
+15. Test system.
+
+PARTITION MANAGEMENT:
+
+- EFI.
+- System.
+- Data.
+- Unallocated space.
+
+Allow:
+
+- Create partition.
+- Delete partition.
+- Format partition.
+- Select installation target.
+
+Implement installation errors.
+
+==================================================
+11. DRIVER AND BENCHMARK SYSTEM
+==================================================
+
+Create a driver manager.
+
+Driver categories:
+
+- Chipset.
+- Graphics.
+- Audio.
+- Network.
+- Storage.
+- Peripheral devices.
+
+Missing drivers must affect simulated functionality.
+
+Implement:
+
+- CPU benchmark.
+- GPU benchmark.
+- RAM test.
+- Storage test.
+- Temperature test.
+- Stability test.
+
+Results must depend on installed hardware.
+
+==================================================
+12. DIAGNOSTICS AND COMPUTER REPAIR
+==================================================
+
+Customers bring damaged computers.
+
+HARDWARE FAULTS:
+
+- Faulty PSU.
+- Missing RAM.
+- Loose RAM.
+- Faulty storage.
+- Overheating.
+- CPU cooling failure.
+- GPU problems.
+- Loose cables.
+- Damaged connectors.
+
+SOFTWARE FAULTS:
+
+- Corrupted OS.
+- Missing drivers.
+- Incorrect BIOS settings.
+- Bootloader failure.
+- Partition issues.
+- Incorrect configuration.
+
+TOOLS:
+
+- Screwdriver.
+- PSU tester.
+- Multimeter simulation.
+- RAM tester.
+- Thermal monitoring.
+- Diagnostic USB.
+- Recovery media.
+
+Different tools reveal different information.
+
+The player must investigate and identify the actual problem.
+
+Do not automatically reveal the fault.
+
+Implement an actual troubleshooting workflow.
+
+==================================================
+13. CUSTOMER GENERATION SYSTEM
+==================================================
+
+Generate customers with:
+
+- Unique identity.
+- Name.
+- Appearance.
+- Personality.
+- Budget.
+- Patience.
+- Technical knowledge.
+- Requirements.
+- Expectations.
+- Satisfaction.
+- Payment status.
+
+CUSTOMER TYPES:
+
+- Office worker.
+- Student.
+- Casual gamer.
+- Professional gamer.
+- Content creator.
+- Business owner.
+- PC enthusiast.
+- Budget-conscious customer.
+
+CUSTOMER REQUEST EXAMPLES:
+
+"I need an inexpensive office PC."
+
+"My computer suddenly stopped turning on."
+
+"Can you upgrade my RAM?"
+
+"I want a gaming PC with a limited budget."
+
+"Please install Windows 10."
+
+"My computer gets too hot."
+
+"I need more storage."
+
+Implement customer interactions:
+
+- Welcome.
+- Discuss requirements.
+- Inspect computer.
+- Estimate price.
+- Accept or reject order.
+- Complete work.
+- Deliver computer.
+- Receive payment.
+- Receive rating.
+
+Customer expectations must vary.
+
+==================================================
+14. ORDER MANAGEMENT
+==================================================
+
+Build a functional order management system.
+
+ORDER TYPES:
+
+- PC Assembly.
+- PC Repair.
+- Hardware Upgrade.
+- OS Installation.
+- Troubleshooting.
+- Maintenance.
+- Custom Gaming PC.
+
+Each order contains:
+
+- Customer.
+- Job description.
+- Required components.
+- Deadline.
+- Estimated cost.
+- Customer budget.
+- Reward.
+- Difficulty.
+- Status.
+
+ORDER STATUSES:
+
+- New.
+- Accepted.
+- In Progress.
+- Waiting for Parts.
+- Testing.
+- Completed.
+- Delivered.
+- Cancelled.
+
+Allow multiple active orders.
+
+Validate all job requirements before completion.
+
+Customers cannot pay for unfinished work.
+
+==================================================
+15. PURCHASING AND INVENTORY
+==================================================
+
+Create a purchasing system accessible through the workshop business computer.
+
+Available products:
+
+- CPUs.
+- Motherboards.
+- RAM.
+- SSDs.
+- HDDs.
+- GPUs.
+- PSUs.
+- Cases.
+- Coolers.
+- Tools.
+
+Each product contains:
+
+- Purchase price.
+- Selling price.
+- Quantity.
+- Supplier.
+- Delivery time.
+- Specifications.
+
+Implement:
+
+- Shopping cart.
+- Purchase confirmation.
+- Inventory updates.
+- Delivery notifications.
+- Stock shortages.
+- Purchase history.
+- Component sales.
+
+Prevent negative inventory.
+
+Do not allow unavailable components to be installed.
+
+==================================================
+16. BUSINESS ECONOMY
+==================================================
+
+Create a complete economic simulation.
+
+STARTING CONDITIONS:
+
+- Small workshop.
+- Limited capital.
+- Basic tools.
+- Limited stock.
+- Low reputation.
+
+INCOME:
+
+- PC assembly.
+- Computer repair.
+- Component sales.
+- OS installation.
+- Hardware upgrades.
+- Maintenance.
+
+EXPENSES:
+
+- Component purchases.
+- Tools.
+- Workshop expenses.
+- Equipment upgrades.
+- Delivery charges.
+
+FINANCIAL DASHBOARD:
+
+- Cash balance.
+- Revenue.
+- Expenses.
+- Net profit.
+- Order profitability.
+- Purchase history.
+- Daily report.
+
+Use Indonesian Rupiah (Rp).
+
+All financial transactions must originate from actual gameplay.
+
+Do not create automatic fake profits.
+
+==================================================
+17. WORKSHOP UPGRADES
+==================================================
+
+Allow players to upgrade:
+
+TOOLS:
+- Screwdriver sets.
+- Professional tool kits.
+- Diagnostic equipment.
+- Thermal monitoring equipment.
+
+WORKSHOP:
+- Better workbench.
+- Additional repair table.
+- Larger storage.
+- Better lighting.
+- Better testing station.
+
+BUSINESS:
+- Larger inventory.
+- Better suppliers.
+- More simultaneous orders.
+- Higher-value customers.
+
+Purchased upgrades should visibly change the workshop wherever practical.
+
+==================================================
+18. REPUTATION AND PROGRESSION
+==================================================
+
+Implement reputation based on:
+
+- Repair quality.
+- PC build quality.
+- Fair pricing.
+- Delivery speed.
+- Customer satisfaction.
+- Successful testing.
+
+Reputation decreases through:
+
+- Incorrect repairs.
+- Incompatible hardware.
+- Missed deadlines.
+- Unreasonable prices.
+- Failed testing.
+- Cancelled orders.
+
+Reputation affects:
+
+- Customer volume.
+- Customer budgets.
+- Available contracts.
+- Supplier access.
+- Business opportunities.
+
+BUSINESS LEVELS:
+
+Level 1: New Technician.
+Level 2: Local Repair Shop.
+Level 3: Trusted Technician.
+Level 4: Professional Workshop.
+Level 5: Established PC Business.
+
+==================================================
+19. TIME AND DAILY CYCLE
+==================================================
+
+Implement an in-game clock and calendar.
+
+Features:
+
+- Start working day.
+- Receive customers.
+- Manage orders.
+- Purchase components.
+- Complete jobs.
+- End working day.
+- Pause.
+- Normal speed.
+- Fast-forward.
+
+Daily reports:
+
+- Customers served.
+- Jobs completed.
+- Revenue.
+- Expenses.
+- Net profit.
+- Reputation changes.
+
+Deadlines must matter.
+
+==================================================
+20. GLOBAL ONLINE LEADERBOARD
+==================================================
+
+THIS IS ONE OF THE MOST IMPORTANT FEATURES.
+
+The game must include a competitive leaderboard where players compete to become the richest PC workshop owner.
+
+The leaderboard must be integrated into the main menu and the business management computer.
+
+A. PLAYER ACCOUNTS
+
+If online backend integration is available, implement:
+
+- Player registration.
+- Login.
+- Logout.
+- Unique username.
+- Workshop name.
+- Player profile.
+- Cloud leaderboard identity.
+
+Use Supabase Authentication where configured.
+
+Allow local single-player mode when online services are unavailable.
+
+B. FAIR STARTING CONDITIONS
+
+Every new player must start with identical conditions:
+
+- Equal starting capital.
+- Identical starter workshop.
+- Identical starter tools.
+- Identical initial inventory.
+- Equal initial reputation.
+- Equal business opportunities.
+
+No player should receive unfair starting advantages.
+
+C. NET WORTH CALCULATION
+
+Calculate total wealth using:
+
+TOTAL NET WORTH =
+
+Cash Balance
++ Inventory Asset Value
++ Equipment Asset Value
++ Workshop Upgrade Asset Value
++ Other Business Assets
+- Outstanding Debt.
+
+Use consistent asset valuation rules.
+
+Do not double-count inventory or assets.
+
+Do not count revenue as net worth.
+
+Update rankings after legitimate financial transactions.
+
+D. GLOBAL LEADERBOARD
+
+Display:
+
+- Global rank.
+- Username.
+- Workshop name.
+- Total net worth.
+- Current business level.
+- Reputation.
+- Completed orders.
+- Total business profit.
+
+Highlight the current player's position.
+
+E. LEADERBOARD CATEGORIES
+
+Create separate rankings:
+
+1. Richest Business Owner.
+2. Highest Total Revenue.
+3. Highest Net Profit.
+4. Most Completed Orders.
+5. Highest Customer Satisfaction.
+6. Best Business Reputation.
+
+F. RANKING INTERFACE
+
+Include:
+
+- Top 3 podium.
+- Ranking table.
+- Player avatar or initials.
+- Net worth in Indonesian Rupiah.
+- Search player.
+- Category filters.
+- Season selector.
+- Current player highlight.
+- Rank movement indicators.
+
+Show:
+
+- Current rank.
+- Previous rank.
+- Wealth difference from the player above.
+- Wealth difference from the player below.
+
+G. SEASONAL COMPETITION
+
+Implement:
+
+- Weekly leaderboard.
+- Monthly leaderboard.
+- All-time leaderboard.
+
+Keep historical rankings.
+
+Season resets must not delete business save files.
+
+H. ONLINE BACKEND
+
+Use Supabase if available.
+
+Create appropriate tables for:
+
+- profiles.
+- player_workshops.
+- leaderboard_statistics.
+- leaderboard_history.
+- seasons.
+
+Implement:
+
+- Authentication.
+- Row Level Security.
+- Secure database policies.
+- Server-side validation where supported.
+- Protected ranking updates.
+- Basic anti-cheat protection.
+- Safe player identity handling.
+
+Never trust arbitrary client-submitted net worth values.
+
+Do not expose private player information.
+
+If backend credentials are unavailable, provide clear setup instructions and use local leaderboard mode.
+
+IMPORTANT:
+
+Do not pretend a local leaderboard is global.
+
+Do not display randomly generated fake players as actual online players.
+
+Clearly label leaderboard modes:
+
+LOCAL LEADERBOARD
+GLOBAL ONLINE LEADERBOARD
+
+The global leaderboard must only show real submitted online player records.
+
+==================================================
+21. MAIN MENU AND UI DESIGN
+==================================================
+
+Create a professional dark-themed interface.
+
+MAIN MENU:
+
+- New Game.
+- Continue.
+- Load Game.
+- Global Leaderboard.
+- Local Leaderboard.
+- Player Profile.
+- Settings.
+- Credits.
+
+NEW GAME:
+
+- Workshop name.
+- Difficulty selection.
+
+DIFFICULTY:
+
+- Easy.
+- Normal.
+- Hard.
+
+WORKSHOP HUD:
+
+- Money.
+- Day.
+- Time.
+- Reputation.
+- Active orders.
+- Notifications.
+
+STYLE:
+
+- Dark navy.
+- Charcoal.
+- Blue accents.
+- Professional typography.
+- Subtle transitions.
+- Clean spacing.
+- Consistent icons.
+- Readable technical information.
+
+Avoid excessive decorative elements.
+
+==================================================
+22. SAVE AND LOAD SYSTEM
+==================================================
+
+Implement persistent save data.
+
+Use IndexedDB or LocalStorage.
+
+Save:
+
+- Player progress.
+- Cash.
+- Inventory.
+- Workshop upgrades.
+- Orders.
+- Customers.
+- Reputation.
+- Workshop configuration.
+- Game date.
+- Completed jobs.
+
+Features:
+
+- Manual save.
+- Automatic save.
+- Load game.
+- Multiple save slots.
+- Reset confirmation.
+- Corrupted save recovery.
+
+For online accounts, keep leaderboard identity and validated ranking records separate from local gameplay save data.
+
+Progress must survive browser refreshes.
+
+==================================================
+23. AUDIO AND ANIMATION
+==================================================
+
+Sound effects:
+
+- UI clicks.
+- Confirmation.
+- Errors.
+- Component installation.
+- Screwdriver.
+- PC power-on.
+- Fan sounds.
+- POST beep.
+- Customer arrival.
+- Payment confirmation.
+
+Animations:
+
+- Customer movement.
+- Door opening.
+- Camera transitions.
+- Component installation.
+- PC fans spinning.
+- Monitor turning on.
+- BIOS boot sequence.
+- OS installation.
+
+Include volume controls and mute settings.
+
+If audio assets are unavailable, create simple original sounds programmatically.
+
+==================================================
+24. RESPONSIVE DESKTOP AND MOBILE SUPPORT
+==================================================
+
+DESKTOP:
+
+- Full workshop view.
+- Mouse interactions.
+- Keyboard shortcuts where useful.
+- Detailed PC assembly.
+- Full management dashboard.
+
+MOBILE:
+
+- Android Chrome compatibility.
+- Touch controls.
+- Responsive interface.
+- Touch component selection.
+- Drag-and-drop adapted for touch.
+- Pinch-to-zoom.
+- Adjustable graphics quality.
+- Landscape-friendly interface.
+
+Support portrait and landscape.
+
+Do not force Android installation.
+
+Use the same game data and gameplay rules on both platforms.
+
+==================================================
+25. PERFORMANCE OPTIMIZATION
+==================================================
+
+Optimize for ordinary desktop computers and mid-range Android devices.
+
+Requirements:
+
+- Efficient Three.js rendering.
+- Reusable geometries.
+- Reusable materials.
+- Instanced rendering where appropriate.
+- Optimized draw calls.
+- Efficient shadows.
+- Optimized textures.
+- Object visibility culling.
+- Delta-time animation.
+- Avoid unnecessary per-frame calculations.
+- Dispose unused resources.
+- Prevent memory leaks.
+- Lazy-load assets where practical.
+
+GRAPHICS SETTINGS:
+
+LOW:
+- Reduced shadows.
+- Simplified lighting.
+- Lower rendering quality.
+- Suitable for integrated graphics.
+
+MEDIUM:
+- Balanced performance and visuals.
+
+HIGH:
+- Better shadows.
+- Higher rendering quality.
+- Additional visual effects.
+
+Include FPS monitoring.
+
+Do not remove core gameplay systems to improve performance.
+
+==================================================
+26. COMPLETE GAMEPLAY LOOP
+==================================================
+
+All systems must work together.
+
+EXAMPLE:
+
+1. Customer enters workshop.
+2. Customer requests a budget gaming PC.
+3. Player discusses requirements.
+4. Player checks budget.
+5. Player opens business computer.
+6. Player purchases compatible components.
+7. Components arrive.
+8. Player opens assembly workstation.
+9. Camera zooms toward workbench.
+10. Player installs hardware.
+11. Compatibility engine validates components.
+12. Player powers on PC.
+13. Player enters BIOS.
+14. Player prepares bootable media.
+15. Player installs operating system.
+16. Player installs drivers.
+17. Player runs benchmarks.
+18. Player completes the order.
+19. Customer receives PC.
+20. Payment is received.
+21. Reputation changes.
+22. Business balance changes.
+23. Net worth is recalculated.
+24. Global leaderboard updates when online synchronization is available.
+
+Every system must use shared game state.
+
+==================================================
+27. PROJECT ARCHITECTURE
+==================================================
+
+Use a modular structure.
+
+Suggested project:
+
+PC-Workshop-Simulator/
+│
+├── index.html
+├── package.json
+├── vite.config.js
+├── README.md
+│
+├── src/
+│   ├── main.js
+│   ├── game.js
+│   ├── game-state.js
+│   ├── scene-manager.js
+│   ├── camera-manager.js
+│   ├── interaction-manager.js
+│   ├── workshop-manager.js
+│   ├── assembly-manager.js
+│   ├── hardware-database.js
+│   ├── compatibility-engine.js
+│   ├── power-system.js
+│   ├── post-system.js
+│   ├── bios-system.js
+│   ├── os-installer.js
+│   ├── driver-manager.js
+│   ├── benchmark-system.js
+│   ├── diagnostics.js
+│   ├── customer-manager.js
+│   ├── order-manager.js
+│   ├── supplier-manager.js
+│   ├── inventory-manager.js
+│   ├── economy-manager.js
+│   ├── reputation-manager.js
+│   ├── upgrade-manager.js
+│   ├── time-manager.js
+│   ├── save-manager.js
+│   ├── leaderboard-manager.js
+│   ├── auth-manager.js
+│   └── audio-manager.js
+│
+├── css/
+│   ├── main.css
+│   ├── menu.css
+│   ├── workshop.css
+│   ├── assembly.css
+│   ├── bios.css
+│   ├── leaderboard.css
+│   └── interface.css
+│
+├── data/
+│   ├── cpus.json
+│   ├── motherboards.json
+│   ├── memory.json
+│   ├── gpus.json
+│   ├── storage.json
+│   ├── psus.json
+│   ├── cases.json
+│   ├── customers.json
+│   └── orders.json
+│
+├── backend/
+│   ├── supabase-schema.sql
+│   └── setup-guide.md
+│
+└── assets/
+    ├── models/
+    ├── textures/
+    ├── icons/
+    └── audio/
+
+You may improve this structure.
+
+Do not put the entire game in one HTML file.
+
+Separate rendering, gameplay logic, UI, data, and backend integration.
+
+==================================================
+28. QUALITY ASSURANCE AND TESTING
+==================================================
+
+Actually test the game.
+
+Test:
+
+- Main menu.
+- New game.
+- Workshop loading.
+- Camera controls.
+- Workstation selection.
+- PC assembly.
+- CPU compatibility.
+- RAM compatibility.
+- GPU compatibility.
+- PSU requirements.
+- POST success.
+- POST failure.
+- BIOS.
+- Boot priority.
+- OS installation.
+- Driver installation.
+- Benchmarks.
+- Diagnostics.
+- Customer generation.
+- Order acceptance.
+- Order completion.
+- Inventory.
+- Purchasing.
+- Payments.
+- Economy.
+- Reputation.
+- Workshop upgrades.
+- Save and load.
+- Browser refresh persistence.
+- Mobile touch controls.
+- Leaderboard calculations.
+- Online authentication when configured.
+- Online ranking synchronization when configured.
+- Local leaderboard fallback.
+
+Fix critical errors.
+
+Do not claim features work unless they are implemented.
+
+Do not use fake functionality to make the game appear complete.
+
+==================================================
+29. DEVELOPMENT EXECUTION
+==================================================
+
+Work autonomously.
+
+Do not ask me to create individual files manually.
+
+Do not ask me to paste dozens of separate code snippets.
+
+Use the available development environment to create the complete project.
+
+DEVELOPMENT PHASES:
+
+PHASE 1:
+Create browser game architecture and project structure.
+
+PHASE 2:
+Build the 3D workshop and camera system.
+
+PHASE 3:
+Build interactive PC assembly.
+
+PHASE 4:
+Implement hardware compatibility and power systems.
+
+PHASE 5:
+Implement POST, BIOS, and OS installation.
+
+PHASE 6:
+Implement computer diagnostics and repairs.
+
+PHASE 7:
+Implement customers and orders.
+
+PHASE 8:
+Implement inventory, purchasing, and economy.
+
+PHASE 9:
+Implement upgrades and business progression.
+
+PHASE 10:
+Implement accounts and global leaderboard.
+
+PHASE 11:
+Implement save/load and synchronization.
+
+PHASE 12:
+Optimize, test, and polish.
+
+Do not stop after the first phase.
+
+Prioritize a working playable game over decorative mockups.
+
+If development time or environment limits prevent completing everything in one generation, build the most important interconnected systems first, preserve working progress, and continue implementing the remaining systems.
+
+==================================================
+30. FINAL DELIVERY REQUIREMENTS
+==================================================
+
+DELIVERABLE A — PLAYABLE BROWSER PREVIEW
+
+Provide an actual playable preview.
+
+It must be interactive.
+
+It must not be a screenshot or static design.
+
+DELIVERABLE B — COMPLETE SOURCE PROJECT
+
+Include:
+
+- HTML.
+- CSS.
+- JavaScript modules.
+- JSON databases.
+- 3D models.
+- Textures.
+- Audio assets.
+- Package configuration.
+- Backend SQL.
+- Documentation.
+
+DELIVERABLE C — COMPLETE ZIP
+
+Create one ZIP archive containing the entire project.
+
+The archive must include all required source files and assets.
+
+It must be extractable and runnable.
+
+Do not deliver only one HTML file.
+
+Do not omit required dependencies.
+
+If direct ZIP creation is unavailable, explain the limitation and provide an exportable complete project structure.
+
+Never invent a download link.
+
+DELIVERABLE D — DOCUMENTATION
+
+Explain:
+
+- How to extract the ZIP.
+- How to install dependencies.
+- How to launch the game.
+- How to open the game in Chrome.
+- How to save progress.
+- How to configure Supabase.
+- How to enable the real global leaderboard.
+
+==================================================
+31. FINAL PRIORITIES
+==================================================
+
+The most important requirements, in order:
+
+1. A REAL BROWSER GAME.
+2. HTML + CSS + JAVASCRIPT + THREE.JS.
+3. Detailed 3D workshop.
+4. Automatic camera zoom into PC assembly.
+5. Interactive hardware installation.
+6. Real hardware compatibility logic.
+7. Power and POST simulation.
+8. BIOS/UEFI simulation.
+9. Operating system installation.
+10. Computer diagnostics and repair.
+11. Customer and order management.
+12. Purchasing and inventory.
+13. Business economy.
+14. Workshop upgrades.
+15. Global competitive leaderboard.
+16. Fair starting capital and net worth ranking.
+17. Account and cloud synchronization.
+18. Save and load.
+19. Desktop and mobile support.
+20. Performance optimization.
+21. Playable browser preview.
+22. Complete downloadable ZIP.
+
+FINAL INSTRUCTION:
+
+Build a complete, interconnected PC Workshop Simulator.
+
+The player must be able to start with limited capital, operate a small workshop, assemble and repair computers, serve customers, purchase components, make profits, upgrade the business, and compete with real players to become the richest workshop owner.
+
+Make the game visually impressive, technically believable, responsive, optimized, and enjoyable.
+
+Do not just promise features.
+
+Implement them.
+
+BUILD THE ACTUAL GAME NOW.
