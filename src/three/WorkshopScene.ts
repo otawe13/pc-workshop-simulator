@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import {
   CameraMode,
   GraphicsQuality,
+  InspectablePartKey,
   Language,
   PCBuildState,
   StationId,
@@ -80,6 +81,7 @@ function detectSoftwareWebGL(): boolean {
 
 export interface WorkshopSceneCallbacks {
   onSelectStation: (station: StationId) => void;
+  onInspectPart?: (partKey: InspectablePartKey | null) => void;
   onHoverStation: (label: string | null) => void;
   onFpsUpdate: (fps: number) => void;
   onCameraMoved?: () => void;
@@ -148,6 +150,8 @@ export class WorkshopSceneController {
   private titleAngle = 0.55;
   private currentPCBuild: PCBuildState | null = null;
   private doorOpenTimer = 0;
+  private explodedTarget = 0;
+  private explodedCurrent = 0;
 
   private lastFrameTime = performance.now();
   private elapsedTime = 0;
@@ -809,6 +813,10 @@ export class WorkshopSceneController {
     syncInteractivePCVisuals(this.pcRefs, build, activeStageHint);
   }
 
+  public setExplodedView(amount: number): void {
+    this.explodedTarget = THREE.MathUtils.clamp(amount, 0, 1);
+  }
+
   public updateWorkshopUpgrades(upgrades: WorkshopUpgrade[], workshopName: string): void {
     const hasWorkbenchPro = upgrades.some((u) => u.id === 'upg_workbench_pro' && u.purchased);
     const hasTestingPro = upgrades.some((u) => u.id === 'upg_testing_rig' && u.purchased);
@@ -949,8 +957,20 @@ export class WorkshopSceneController {
       this.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       this.raycaster.setFromCamera(this.pointer, this.camera);
       const hits = this.raycaster.intersectObjects(this.interactables, true);
-      if (hits.length > 0 && hits[0].object.userData.stationId) {
-        this.callbacks.onSelectStation(hits[0].object.userData.stationId as StationId);
+      if (hits.length > 0) {
+        const hitObj = hits[0].object;
+        const partKey = hitObj.userData.partKey as InspectablePartKey | undefined;
+        const stationId = hitObj.userData.stationId as StationId | undefined;
+        if (partKey && this.activeCameraMode !== 'overview' && this.callbacks.onInspectPart) {
+          this.callbacks.onInspectPart(partKey);
+          return;
+        }
+        if (stationId) {
+          this.callbacks.onSelectStation(stationId);
+          if (partKey && this.callbacks.onInspectPart) {
+            this.callbacks.onInspectPart(partKey);
+          }
+        }
       }
     };
 
@@ -1088,12 +1108,33 @@ export class WorkshopSceneController {
       this.controls.update();
     }
 
-    // Side panel smooth slide open/close animation
+    // Side panel smooth slide open/close + Exploded View spread animation
+    this.explodedCurrent = THREE.MathUtils.damp(this.explodedCurrent, this.explodedTarget, 8, dt);
     if (this.pcRefs) {
-      const targetPanelX = this.currentPCBuild?.sidePanelOpen ? 0.24 : 0.124;
+      const exp = this.explodedCurrent;
+      const bo = this.pcRefs.baseOffsets;
+      const targetPanelX = this.currentPCBuild?.sidePanelOpen ? 0.24 : bo.sidePanelX;
       const targetPanelZ = this.currentPCBuild?.sidePanelOpen ? 0.22 : 0;
-      this.pcRefs.sidePanel.position.x = THREE.MathUtils.damp(this.pcRefs.sidePanel.position.x, targetPanelX, 8, dt);
+      this.pcRefs.sidePanel.position.x = THREE.MathUtils.damp(
+        this.pcRefs.sidePanel.position.x,
+        targetPanelX + exp * 0.22,
+        8,
+        dt
+      );
       this.pcRefs.sidePanel.position.z = THREE.MathUtils.damp(this.pcRefs.sidePanel.position.z, targetPanelZ, 8, dt);
+
+      this.pcRefs.motherboard.position.x = bo.motherboardX + exp * 0.04;
+      this.pcRefs.cpu.position.x = bo.cpuX + exp * 0.1;
+      this.pcRefs.airCooler.position.x = bo.coolerX + exp * 0.21;
+      this.pcRefs.aioCooler.position.y = exp * 0.09;
+      this.pcRefs.ramSticks.forEach((stick, idx) => {
+        stick.position.x = bo.ramX + exp * (0.12 + idx * 0.015);
+      });
+      this.pcRefs.nvmeDrive.position.x = bo.nvmeX + exp * 0.12;
+      this.pcRefs.sataDrive.position.x = bo.sataX + exp * 0.11;
+      this.pcRefs.gpuGroup.position.x = bo.gpuX + exp * 0.19;
+      this.pcRefs.addonCard.position.x = bo.addonX + exp * 0.17;
+      this.pcRefs.psuGroup.position.x = bo.psuX - exp * 0.15;
 
       // Spin PC case fans & GPU fans when powered on
       if (this.currentPCBuild?.poweredOn) {

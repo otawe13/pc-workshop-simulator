@@ -3,6 +3,7 @@ export type GraphicsQuality = 'low' | 'medium' | 'high';
 export type GameScreenState = 'title' | 'playing' | 'paused' | 'gameover';
 export type Language = 'id' | 'en';
 export type UIScale = 'compact' | 'normal' | 'large';
+export type DayDurationOption = 10 | 20 | 30 | 45 | 60;
 
 export type CameraMode =
   | 'overview'
@@ -40,13 +41,61 @@ export type ComponentCategory =
   | 'case'
   | 'cooler'
   | 'fan'
-  | 'consumable';
+  | 'consumable'
+  | 'addon'
+  | 'peripheral';
 
-export type SocketType = 'LGA1200' | 'LGA1700' | 'AM4' | 'AM5';
+export type SocketType =
+  | 'LGA775'
+  | 'LGA1151'
+  | 'LGA1200'
+  | 'LGA1700'
+  | 'LGA1851'
+  | 'AM3+'
+  | 'AM4'
+  | 'AM5';
+
 export type RamType = 'DDR3' | 'DDR4' | 'DDR5';
-export type FormFactor = 'ITX' | 'mATX' | 'ATX';
+export type FormFactor = 'ITX' | 'mATX' | 'ATX' | 'E-ATX';
+export type CaseSizeClass = 'MiniITX' | 'MiniTower' | 'MidTower' | 'FullTower';
+export type PsuFormFactor = 'ATX' | 'SFX';
 export type StorageInterface = 'NVMe' | 'SATA';
 export type OSType = 'Windows 10' | 'Windows 11' | 'Linux Mint' | 'Ubuntu';
+
+export type AddonType =
+  | 'wifi'
+  | 'bluetooth'
+  | 'sound_card'
+  | 'capture_card'
+  | 'nic'
+  | 'optical'
+  | 'fan_hub'
+  | 'rgb_hub'
+  | 'cable_kit'
+  | 'screw_kit';
+
+export type PeripheralType =
+  | 'monitor'
+  | 'keyboard'
+  | 'mouse'
+  | 'headset'
+  | 'speaker'
+  | 'webcam'
+  | 'microphone'
+  | 'ups'
+  | 'external_storage';
+
+export type InspectablePartKey =
+  | 'case'
+  | 'motherboard'
+  | 'cpu'
+  | 'cooler'
+  | 'ram'
+  | 'storage'
+  | 'gpu'
+  | 'psu'
+  | 'addon'
+  | 'peripheral';
 
 export interface HardwareItem {
   id: string;
@@ -65,22 +114,48 @@ export interface HardwareItem {
   maxRamGB?: number;
   capacityGB?: number;
   speedMHz?: number;
+  latencyCL?: number;
   modules?: number;
   pcieSlots?: number;
   m2Slots?: number;
   sataPorts?: number;
+  vrmPhases?: string;
+  rearIoPorts?: string[];
   formFactor?: FormFactor;
   supportedFormFactors?: FormFactor[];
+  caseSizeClass?: CaseSizeClass;
+  supportsAtxPsu?: boolean;
+  radiatorSupportMm?: number[];
+  driveBays?: string;
   storageInterface?: StorageInterface;
+  storageFormFactor?: 'M.2 2280' | '2.5"' | '3.5"';
+  pcieGen?: string;
+  readMBps?: number;
+  writeMBps?: number;
+  healthPct?: number;
   lengthMm?: number;
   heightMm?: number;
+  radiatorSizeMm?: number;
   maxGpuLengthMm?: number;
   maxCoolerHeightMm?: number;
+  cores?: number;
+  threads?: number;
+  baseClockGHz?: number;
+  boostClockGHz?: number;
+  l3CacheMB?: number;
+  vramGB?: number;
+  memoryType?: string;
+  boostClockMHz?: number;
   tdpW?: number;
   wattage?: number;
+  efficiencyRating?: string;
+  psuFormFactor?: PsuFormFactor;
+  connectors?: string[];
   coolingCapacityW?: number;
   pciePowerPins?: number;
   hasIntegratedGraphics?: boolean;
+  addonType?: AddonType;
+  peripheralType?: PeripheralType;
   performanceScore: number;
   purchasePrice: number; // IDR
   sellingPrice: number; // IDR
@@ -111,6 +186,8 @@ export interface CompatibilityIssue {
   severity: 'error' | 'warning';
   code: string;
   message: string;
+  cause?: string;
+  fixSuggestion?: string;
   involvedCategories: ComponentCategory[];
 }
 
@@ -137,6 +214,19 @@ export type AssemblyStageId =
   | 'inspection'
   | 'first_boot';
 
+export interface VirtualNetworkConfig {
+  adapterName: string;
+  linkStatus: 'Connected' | 'Disconnected' | 'Limited';
+  mode: 'dhcp' | 'static';
+  ipv4Address: string;
+  subnetMask: string;
+  gateway: string;
+  dnsPrimary: string;
+  dnsSecondary: string;
+  linkSpeedMbps: number;
+  packetLossPct: number;
+}
+
 export interface PCBuildState {
   caseId: string | null;
   motherboardId: string | null;
@@ -146,11 +236,14 @@ export interface PCBuildState {
   storageIds: string[];
   gpuId: string | null;
   psuId: string | null;
+  addonIds?: string[];
+  peripheralIds?: string[];
   fanCount: number;
 
   // Physical assembly details
   sidePanelOpen: boolean;
   selectedTool: 'none' | 'screwdriver' | 'thermal_paste' | 'antistatic';
+  dustLevel?: number; // 0 (clean) to 100 (heavy dust)
   motherboardScrewsSecured: boolean;
   cpuSocketOpen: boolean;
   cpuRetentionClosed: boolean;
@@ -177,6 +270,7 @@ export interface PCBuildState {
   biosSettings: BIOSSettings;
   osState: OSState;
   drivers: DriverState;
+  networkConfig?: VirtualNetworkConfig;
   benchmarks: BenchmarkResults | null;
 }
 
@@ -203,9 +297,14 @@ export interface OSState {
   bootloaderBroken: boolean;
   partitions: PartitionEntry[];
   language: string;
+  keyboardLayout?: string;
   targetDriveId: string | null;
   installProgress: number;
   setupCompleted: boolean;
+  oobeCompleted?: boolean;
+  oobeUsername?: string;
+  oobeComputerName?: string;
+  privacyTelemetry?: boolean;
 }
 
 export interface DriverState {
@@ -246,6 +345,7 @@ export type FaultType =
   | 'faulty_psu'
   | 'missing_ram'
   | 'loose_ram'
+  | 'incompatible_ram'
   | 'faulty_storage'
   | 'overheating_paste'
   | 'cooler_failure'
@@ -256,7 +356,9 @@ export type FaultType =
   | 'missing_drivers'
   | 'bios_misconfig'
   | 'bootloader_failure'
-  | 'partition_issue';
+  | 'partition_issue'
+  | 'dust_clogged'
+  | 'network_issue';
 
 export type DiagnosticToolId =
   | 'screwdriver'
@@ -265,7 +367,10 @@ export type DiagnosticToolId =
   | 'ram_tester'
   | 'thermal_monitor'
   | 'diagnostic_usb'
-  | 'recovery_media';
+  | 'recovery_media'
+  | 'air_blower'
+  | 'cleaning_brush'
+  | 'cable_tester';
 
 export interface PCFault {
   id: string;
@@ -327,6 +432,9 @@ export interface OrderRequirements {
   requiredOS?: OSType;
   requireDrivers?: boolean;
   requireBenchmark?: boolean;
+  requireNetworkReady?: boolean;
+  requiredAddonType?: AddonType;
+  requiredPeripheralType?: PeripheralType;
   fixAllFaults?: boolean;
   specificCategory?: ComponentCategory;
 }
@@ -427,6 +535,8 @@ export interface GameSettings {
   cameraSensitivity: number;
   cameraSpeed: number;
   uiScale: UIScale;
+  dayDurationMinutes: DayDurationOption;
+  playerAvatar?: string;
   showHints: boolean;
   showObjectives: boolean;
   showHardwareEducation: boolean;
@@ -443,22 +553,31 @@ export interface GameNotification {
 
 export type TutorialChapterId =
   | 'welcome'
+  | 'parts_recognition'
   | 'customer'
   | 'assembly'
+  | 'compatibility'
+  | 'diagnostics'
   | 'power_post'
   | 'os_install'
-  | 'complete_order'
+  | 'virtual_desktop'
+  | 'network_cmd'
   | 'business';
 
 export interface TutorialState {
   active: boolean;
   completed: boolean;
   skipped: boolean;
-  chapterIndex: number; // 0..6
+  chapterIndex: number; // 0..10
   rewardClaimed: boolean;
   cameraMoved: boolean;
   visitedStationCount: number;
   checkedBusinessPC: boolean;
+  checkedCompatibility?: boolean;
+  checkedDiagnostics?: boolean;
+  openedDesktop?: boolean;
+  ranCmdCommand?: boolean;
+  configuredNetwork?: boolean;
 }
 
 export interface GameState {

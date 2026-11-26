@@ -130,6 +130,21 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
               {t(lang, 'requiredOs')}: <strong className="text-slate-200">{order.requirements.requiredOS}</strong>
             </span>
           )}
+          {order.requirements.requireNetworkReady && (
+            <span className="text-sky-300">
+              {lang === 'en' ? 'Active IPv4/DNS Network' : 'Jaringan IPv4/DNS Aktif'}
+            </span>
+          )}
+          {order.requirements.requiredAddonType && (
+            <span className="text-emerald-300">
+              Add-on: <strong className="uppercase">{order.requirements.requiredAddonType}</strong>
+            </span>
+          )}
+          {order.requirements.requiredPeripheralType && (
+            <span className="text-emerald-300">
+              Peripheral: <strong className="uppercase">{order.requirements.requiredPeripheralType}</strong>
+            </span>
+          )}
           {order.requirements.fixAllFaults && <span>{t(lang, 'mustResolveFaults')}</span>}
         </div>
 
@@ -151,7 +166,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
                 type="button"
                 disabled={activeCount >= maxActive}
                 onClick={() => onAcceptOrder(order.id)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-45 text-white text-xs font-semibold cursor-pointer"
+                className="touch-target flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-45 text-white text-xs font-semibold cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 {t(lang, 'acceptOrder')}
@@ -159,7 +174,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
               <button
                 type="button"
                 onClick={() => onRejectOrder(order.id)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer"
+                className="touch-target flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium cursor-pointer"
               >
                 <XCircle className="w-3.5 h-3.5 text-rose-400" />
                 {t(lang, 'declineOrder')}
@@ -170,7 +185,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
               <button
                 type="button"
                 onClick={() => onFocusOrderAtWorkbench(order.id, 'workbench')}
-                className="px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/35 border border-sky-500/40 text-sky-200 text-xs font-medium cursor-pointer"
+                className="touch-target px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/35 border border-sky-500/40 text-sky-200 text-xs font-medium cursor-pointer"
               >
                 {t(lang, 'openAtWorkbench')}
               </button>
@@ -178,7 +193,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => onFocusOrderAtWorkbench(order.id, 'repair_table')}
-                  className="px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-200 text-xs font-medium cursor-pointer"
+                  className="touch-target px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-200 text-xs font-medium cursor-pointer"
                 >
                   {t(lang, 'diagnoseAndRepair')}
                 </button>
@@ -186,7 +201,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
               <button
                 type="button"
                 onClick={() => onFocusOrderAtWorkbench(order.id, 'testing_station')}
-                className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer"
+                className="touch-target px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer"
               >
                 {t(lang, 'bootBiosOs')}
               </button>
@@ -195,7 +210,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
                 type="button"
                 disabled={!validation?.ready}
                 onClick={() => onDeliverOrder(order.id)}
-                className="ml-auto flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-semibold cursor-pointer disabled:cursor-not-allowed"
+                className="touch-target ml-auto flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-xs font-semibold cursor-pointer disabled:cursor-not-allowed"
               >
                 {validation?.ready ? <CheckCircle2 className="w-3.5 h-3.5" /> : <DollarSign className="w-3.5 h-3.5" />}
                 {validation?.ready ? t(lang, 'deliverAndCollect') : t(lang, 'incompleteOrder')}
@@ -208,15 +223,15 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-black/65">
-      <div className="w-full max-w-4xl max-h-[88vh] flex flex-col bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 border-b border-slate-800">
+    <div className="fixed inset-0 z-30 flex items-center justify-center p-2 sm:p-6 bg-black/65">
+      <div className="w-full max-w-4xl max-h-[88vh] modal-landscape-shell flex flex-col bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 sm:py-4 modal-landscape-header border-b border-slate-800">
           <div>
-            <h2 className="font-display text-lg font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="font-display text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
               <ClipboardCheck className="w-5 h-5 text-sky-400" />
               {t(lang, 'receptionTitle')}
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-400 landscape-hide">
               {t(lang, 'receptionSubtitle', { active: activeCount, max: maxActive })}
             </p>
           </div>
@@ -224,7 +239,7 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
             <button
               type="button"
               onClick={onInviteNewCustomer}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-sky-300 cursor-pointer"
+              className="touch-target flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium text-sky-300 cursor-pointer"
             >
               <UserPlus className="w-3.5 h-3.5" />
               {t(lang, 'callNextCustomer')}
@@ -233,14 +248,14 @@ export const ReceptionModal: React.FC<ReceptionModalProps> = ({
               type="button"
               aria-label="Close Reception"
               onClick={onClose}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+              className="touch-target p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
           {visibleOrders.length === 0 ? (
             <div className="text-center py-12 text-sm text-slate-400 border border-dashed border-slate-800 rounded-xl">
               {t(lang, 'noCustomersWaiting')}

@@ -7,8 +7,10 @@ import {
   TutorialState,
   WorkshopOrder,
 } from '../types/game';
+import { evaluateCompatibility } from './compatibilityEngine';
 import { validateOrderCompletion } from './businessEngine';
 import { createEmptyPCBuild, runPOST } from './simulationEngine';
+import { evaluateNetworkHealth } from './virtualOsEngine';
 
 export interface TutorialChapterMeta {
   index: number;
@@ -29,141 +31,221 @@ export const TUTORIAL_CHAPTERS: TutorialChapterMeta[] = [
     index: 0,
     id: 'welcome',
     title: {
-      id: 'Bab 1: Mengenal Bengkel',
-      en: 'Chapter 1: Know Your Workshop',
+      id: 'Bab 1: Pengenalan Bengkel',
+      en: 'Chapter 1: Workshop Introduction',
     },
     instruction: {
-      id: 'Putar atau geser kamera (drag layar / WASD) lalu kunjungi Meja Resepsionis atau stasiun lain untuk mengenal area bengkelmu.',
+      id: 'Putar atau geser kamera (drag layar / WASD) lalu kunjungi Meja Resepsionis atau stasiun lain untuk mengenal area bengkel.',
       en: 'Orbit or pan the camera (drag / WASD) and click Reception or another workstation to explore your shop.',
     },
     whyItMatters: {
-      id: 'Bengkelmu punya area Resepsionis, Meja Perakitan, Meja Perbaikan, Layar Uji PC, dan Komputer Bisnis.',
-      en: 'Your shop has dedicated areas for Reception, Assembly, Repair, Testing, and Business management.',
+      id: 'Bengkel terbagi atas area Resepsionis, Meja Perakitan, Meja Perbaikan, Layar Uji OS, dan Komputer Bisnis.',
+      en: 'Your shop has dedicated areas for Reception, Assembly, Repair, Testing OS, and Business management.',
     },
     targetStation: 'reception',
     beaconWorldPos: [-3.6, 2.0, 2.2],
   },
   {
     index: 1,
-    id: 'customer',
+    id: 'parts_recognition',
     title: {
-      id: 'Bab 2: Menerima Pelanggan',
-      en: 'Chapter 2: Receiving Customers',
+      id: 'Bab 2: Mengenal Komponen PC',
+      en: 'Chapter 2: Recognizing PC Parts',
     },
     instruction: {
-      id: 'Buka Meja Resepsionis dan terima pesanan tutorial pertama dari pelanggan pertamamu (klik "Terima Pesanan" lalu "Buka di Meja Rakit").',
-      en: 'Open the Reception Desk and accept your starter customer order, then open it at the Workbench.',
+      id: 'Buka Meja Perakitan atau klik salah satu komponen 3D pada PC untuk melihat spesifikasi & edukasi perangkat keras.',
+      en: 'Open the Workbench or click a 3D PC component to inspect specs and hardware education notes.',
     },
     whyItMatters: {
-      id: 'Setiap pesanan mencantumkan anggaran, kebutuhan spesifikasi, dan sistem operasi yang diminta pelanggan.',
-      en: 'Each order specifies the client budget, minimum hardware specs, and required operating system.',
-    },
-    targetStation: 'reception',
-    beaconWorldPos: [-3.6, 2.0, 2.2],
-  },
-  {
-    index: 2,
-    id: 'assembly',
-    title: {
-      id: 'Bab 3: Merakit PC',
-      en: 'Chapter 3: Assembling the PC',
-    },
-    instruction: {
-      id: 'Di Meja Perakitan, pasang Casing, buka panel samping, lalu pasang Motherboard, CPU, Pasta & Cooler, RAM (2x), Penyimpanan, GPU, PSU, dan hubungkan kabel utama.',
-      en: 'At the Workbench, install Case, open side panel, then mount Motherboard, CPU, Paste & Cooler, 2x RAM, Storage, GPU, PSU, and cables.',
-    },
-    whyItMatters: {
-      id: 'Urutan perakitan yang benar (membuka tuas soket, pasta termal, kabel 24-pin & 8-pin) mencegah kegagalan saat dinyalakan.',
-      en: 'Correct installation order (socket lever, thermal paste, 24-pin & 8-pin cables) prevents boot failure.',
+      id: 'Memahami soket CPU, tipe RAM (DDR4/DDR5), panjang GPU, serta daya PSU mencegah kesalahan saat belanja maupun merakit.',
+      en: 'Knowing CPU sockets, DDR generations, GPU length, and PSU wattage avoids costly assembly errors.',
     },
     targetStation: 'workbench',
     beaconWorldPos: [0.45, 1.9, -0.35],
   },
   {
-    index: 3,
-    id: 'power_post',
+    index: 2,
+    id: 'customer',
     title: {
-      id: 'Bab 4: Menyalakan PC & POST',
-      en: 'Chapter 4: Power On & POST',
+      id: 'Bab 3: Menerima Pesanan Pelanggan',
+      en: 'Chapter 3: Accepting Customer Orders',
     },
     instruction: {
-      id: 'Pada Tahap 11 (Uji Nyala), hubungkan kabel Monitor & Keyboard lalu tekan "Nyalakan PC & Buka Layar Uji" untuk lolos cek POST.',
-      en: 'On Stage 11 (First Boot), connect Monitor & Keyboard cables and power on the PC to pass POST.',
+      id: 'Buka Meja Resepsionis dan terima pesanan tutorial pertama dari Budi Santoso (klik "Terima Pesanan" lalu "Buka di Meja Rakit").',
+      en: 'Open Reception and accept the starter customer order from Budi Santoso ("Accept Order" -> "Open at Workbench").',
     },
     whyItMatters: {
-      id: 'POST (Power-On Self-Test) memeriksa apakah CPU, RAM, GPU, dan suhu dalam keadaan sehat sebelum masuk BIOS.',
-      en: 'POST verifies CPU, RAM, GPU, and thermal readiness before entering BIOS or booting an OS.',
+      id: 'Setiap pesanan mencantumkan anggaran, kebutuhan performa, sistem operasi, serta tenggat hari.',
+      en: 'Each order specifies the client budget, minimum hardware specs, OS, and deadline.',
+    },
+    targetStation: 'reception',
+    beaconWorldPos: [-3.6, 2.0, 2.2],
+  },
+  {
+    index: 3,
+    id: 'assembly',
+    title: {
+      id: 'Bab 4: Perakitan PC Langkah demi Langkah',
+      en: 'Chapter 4: Step-by-Step PC Assembly',
+    },
+    instruction: {
+      id: 'Di Meja Perakitan, pasang Casing, buka panel samping, lalu pasang Motherboard, CPU, Pasta & Cooler, 2x RAM, SSD, GPU, PSU, dan kabel utama.',
+      en: 'At the Workbench, install Case, open side panel, mount Motherboard, CPU, Paste & Cooler, 2x RAM, SSD, GPU, PSU, and power cables.',
+    },
+    whyItMatters: {
+      id: 'Cobalah juga fitur Exploded View & klik bagian 3D PC untuk memeriksa posisi tiap komponen secara visual.',
+      en: 'You can also use the Exploded View slider and click 3D parts to verify installation cleanly.',
+    },
+    targetStation: 'workbench',
+    beaconWorldPos: [0.45, 1.9, -0.35],
+  },
+  {
+    index: 4,
+    id: 'compatibility',
+    title: {
+      id: 'Bab 5: Cek Kompatibilitas & Daya',
+      en: 'Chapter 5: Compatibility & Power Check',
+    },
+    instruction: {
+      id: 'Periksa panel Status Kompatibilitas pada Meja Perakitan dan pastikan estimasi watt PSU mencukupi tanpa ada Error kompatibilitas.',
+      en: 'Review the Compatibility Status on the Workbench and confirm zero compatibility errors and sufficient PSU headroom.',
+    },
+    whyItMatters: {
+      id: 'Setiap error kompatibilitas di bengkel menampilkan penyebab dan saran perbaikan agar rakitan 100% aman.',
+      en: 'Compatibility checks highlight both the root cause and suggested fix before powering on.',
+    },
+    targetStation: 'workbench',
+    beaconWorldPos: [0.45, 1.9, -0.35],
+    hintAssemblyStage: 'inspection',
+  },
+  {
+    index: 5,
+    id: 'diagnostics',
+    title: {
+      id: 'Bab 6: Diagnostik & Perbaikan',
+      en: 'Chapter 6: Diagnostics & Troubleshooting',
+    },
+    instruction: {
+      id: 'Kunjungi Meja Perbaikan atau periksa alat diagnostik bengkel (Obeng, Air Blower, Multimeter, Cable Tester, PSU Tester) lalu bersiap menyalakan PC.',
+      en: 'Visit the Repair Bench to inspect workshop diagnostic tools (Screwdriver, Air Blower, Multimeter, Cable Tester, PSU Tester).',
+    },
+    whyItMatters: {
+      id: 'Pesanan servis memiliki kerusakan tersembunyi seperti debu, pasta kering, kabel longgar, hingga gangguan IP jaringan.',
+      en: 'Repair jobs contain hidden faults such as dust clogging, dried paste, loose cables, or IP network errors.',
+    },
+    targetStation: 'repair_table',
+    beaconWorldPos: [3.6, 2.0, 2.0],
+  },
+  {
+    index: 6,
+    id: 'power_post',
+    title: {
+      id: 'Bab 7: Uji Nyala PC & POST',
+      en: 'Chapter 7: Power On & POST',
+    },
+    instruction: {
+      id: 'Pada Tahap 11 (Uji Nyala), hubungkan Kabel Monitor & Keyboard lalu tekan "Nyalakan PC & Buka Layar Uji" agar lolos POST.',
+      en: 'On Stage 11, connect Monitor & Keyboard cables and power on the PC to pass POST.',
+    },
+    whyItMatters: {
+      id: 'POST (Power-On Self-Test) memastikan CPU, RAM, GPU, kabel daya, dan suhu dalam keadaan sehat sebelum masuk BIOS.',
+      en: 'POST verifies CPU, RAM, GPU, power headers, and thermals before booting an OS.',
     },
     targetStation: 'testing_station',
     beaconWorldPos: [0.45, 1.9, -0.35],
     hintAssemblyStage: 'first_boot',
   },
   {
-    index: 4,
+    index: 7,
     id: 'os_install',
     title: {
-      id: 'Bab 5: Instalasi Sistem Operasi',
-      en: 'Chapter 5: Installing OS & Drivers',
+      id: 'Bab 8: Instalasi Windows & OOBE',
+      en: 'Chapter 8: Windows Setup & OOBE',
     },
     instruction: {
-      id: 'Pasang USB Windows 11 di Layar Uji, atur USB ke urutan Boot #1 di BIOS (atau klik Lanjutkan Boot), buat partisi EFI & System lalu format, instal OS, dan instal seluruh Driver.',
-      en: 'Insert the Windows 11 USB, set USB #1 in BIOS if needed, create EFI & System partitions, format System, install OS, and install all drivers.',
+      id: 'Pasang USB Windows 11, masuk BIOS (USB urutan #1), buat & format partisi EFI + System, jalankan Windows Setup hingga OOBE selesai!',
+      en: 'Insert Windows 11 USB, set USB #1 in BIOS, create & format EFI + System partitions, complete Windows Setup and OOBE.',
     },
     whyItMatters: {
-      id: 'Tanpa partisi terformat, sistem operasi, dan driver lengkap, PC pelanggan belum siap dipakai bekerja maupun bermain game.',
-      en: 'Formatted partitions, a clean OS install, and all 6 drivers are required for full PC performance.',
+      id: 'Proses instalasi lengkap meliputi pemilihan bahasa, partisi, penyalinan berkas, hingga konfigurasi akun OOBE.',
+      en: 'Full setup covers language, partitioning, file copy, and OOBE account creation.',
     },
     targetStation: 'testing_station',
     beaconWorldPos: [3.8, 2.0, -2.8],
   },
   {
-    index: 5,
-    id: 'complete_order',
+    index: 8,
+    id: 'virtual_desktop',
     title: {
-      id: 'Bab 6: Uji Benchmark & Serahkan Pesanan',
-      en: 'Chapter 6: Benchmark & Deliver Order',
+      id: 'Bab 9: Desktop Virtual & Driver',
+      en: 'Chapter 9: Virtual Desktop & Drivers',
     },
     instruction: {
-      id: 'Jalankan Uji Stabilitas Benchmark di Desktop OS, tutup panel samping casing di Tahap 10, lalu serahkan pesanan di Resepsionis untuk menerima bayaran.',
-      en: 'Run a Stability Benchmark on the OS Desktop, close the case side panel, and deliver the PC at Reception.',
+      id: 'Di Desktop Windows virtual, buka Manajer Driver untuk memasang seluruh 6 driver, lalu jalankan Uji Stabilitas Benchmark.',
+      en: 'On the Virtual Windows Desktop, install all 6 hardware drivers in Driver Manager and run a Benchmark test.',
     },
     whyItMatters: {
-      id: 'Uji benchmark memastikan suhu aman dan semua komponen stabil sebelum diserahkan ke pelanggan.',
-      en: 'Stability benchmarks prove thermals and performance meet client standards before delivery.',
+      id: 'Tanpa driver Chipset, Grafis, dan Jaringan, performa GPU & koneksi internet belum bekerja optimal.',
+      en: 'Installing Chipset, Graphics, and Network drivers unlocks full hardware speed and connectivity.',
     },
-    targetStation: 'reception',
-    beaconWorldPos: [-3.6, 2.0, 2.2],
+    targetStation: 'testing_station',
+    beaconWorldPos: [3.8, 2.0, -2.8],
   },
   {
-    index: 6,
-    id: 'business',
+    index: 9,
+    id: 'network_cmd',
     title: {
-      id: 'Bab 7: Mengelola Bisnis',
-      en: 'Chapter 7: Managing Your Business',
+      id: 'Bab 10: Command Prompt & Jaringan',
+      en: 'Chapter 10: Command Prompt & Network',
     },
     instruction: {
-      id: 'Buka Komputer Bisnis untuk melihat Toko Komponen, Keuangan (Net Worth), Upgrade Bengkel, serta Papan Peringkat.',
-      en: 'Open the Business Computer to inspect the Hardware Store, Finances (Net Worth), Upgrades, and Leaderboards.',
+      id: 'Buka Command Prompt (CMD) atau Network Settings di Desktop virtual, jalankan "ipconfig" atau "ping 8.8.8.8", lalu serahkan pesanan di Resepsionis!',
+      en: 'Open CMD or Network Settings on the Virtual Desktop, run "ipconfig" or "ping 8.8.8.8", and deliver the finished PC at Reception.',
     },
     whyItMatters: {
-      id: 'Mengelola stok komponen, keuntungan, dan upgrade bengkel menentukan pertumbuhan reputasi dan kekayaanmu.',
-      en: 'Managing inventory, profit margins, and workshop upgrades drives your business growth.',
+      id: 'Teknisi profesional selalu memverifikasi IP, Gateway, DNS, dan tes ping sebelum mengembalikan PC ke pelanggan.',
+      en: 'Verifying IPv4, Gateway, DNS, and ping confirms the client can browse immediately.',
+    },
+    targetStation: 'testing_station',
+    beaconWorldPos: [3.8, 2.0, -2.8],
+  },
+  {
+    index: 10,
+    id: 'business',
+    title: {
+      id: 'Bab 11: Manajemen Bisnis Bengkel',
+      en: 'Chapter 11: Workshop Business Management',
+    },
+    instruction: {
+      id: 'Buka Komputer Bisnis untuk melihat Toko Komponen, Harga Pasar Harian, Laporan Keuangan (Net Worth), Cloud Save, dan Papan Peringkat.',
+      en: 'Open the Business Computer to explore the Parts Store, Daily Market Prices, Finances, Cloud Save, and Leaderboards.',
+    },
+    whyItMatters: {
+      id: 'Mengelola margin keuntungan, stok komponen, dan upgrade bengkel menentukan pertumbuhan level bisnismu.',
+      en: 'Managing profit margins, part stock, and upgrades grows your shop reputation and net worth.',
     },
     targetStation: 'business_pc',
     beaconWorldPos: [-3.4, 2.0, -2.8],
   },
 ];
 
+export const TUTORIAL_TOTAL_CHAPTERS = TUTORIAL_CHAPTERS.length; // 11
+
 export function createDefaultTutorialState(active = true): TutorialState {
   return {
     active,
     completed: !active,
     skipped: false,
-    chapterIndex: active ? 0 : 6,
+    chapterIndex: active ? 0 : TUTORIAL_TOTAL_CHAPTERS - 1,
     rewardClaimed: !active,
     cameraMoved: !active,
-    visitedStationCount: active ? 0 : 5,
+    visitedStationCount: active ? 0 : 6,
     checkedBusinessPC: !active,
+    checkedCompatibility: !active,
+    checkedDiagnostics: !active,
+    openedDesktop: !active,
+    ranCmdCommand: !active,
+    configuredNetwork: !active,
   };
 }
 
@@ -187,8 +269,8 @@ export function createTutorialStarterOrder(day: number, lang: Language = 'id'): 
     type: 'PC Assembly',
     title: isEn ? 'Starter PC Build (Guided Tutorial)' : 'Rakit PC Perdana (Pesanan Panduan)',
     description: isEn
-      ? 'Build a complete PC using your starter workshop stock: 16GB RAM, 500GB SSD, GTX 1650 GPU, Windows 11, all drivers, and passing benchmark.'
-      : 'Rakit PC lengkap memakai stok komponen awal bengkel: RAM 16GB, SSD 500GB, GPU GTX 1650, Windows 11, seluruh driver, dan lolos benchmark.',
+      ? 'Build a complete PC using your starter workshop stock: 16GB RAM, 500GB SSD, GTX 1650 GPU, Windows 11, all drivers, active network, and passing benchmark.'
+      : 'Rakit PC lengkap memakai stok komponen awal bengkel: RAM 16GB, SSD 500GB, GPU GTX 1650, Windows 11, seluruh driver, jaringan aktif, dan lolos benchmark.',
     dialogue: isEn
       ? '"Hi technician! This is my first custom PC for college and light gaming. Please build it neatly with Windows 11!"'
       : '"Halo Kak Teknisi! Ini PC rakitan pertama saya untuk kuliah dan game ringan. Tolong dirakit rapi dengan Windows 11 ya!"',
@@ -200,6 +282,7 @@ export function createTutorialStarterOrder(day: number, lang: Language = 'id'): 
       requiredOS: 'Windows 11',
       requireDrivers: true,
       requireBenchmark: true,
+      requireNetworkReady: true,
     },
     budget: 9_200_000,
     laborReward: 650_000,
@@ -233,7 +316,6 @@ export function evaluateTutorialProgress(
 ): TutorialEvaluation {
   const tut = state.tutorialState ?? createDefaultTutorialState(false);
 
-  // Determine the tutorial order or any active assembly order
   const tutorialOrder =
     state.orders.find((o) => o.isTutorialOrder) ??
     state.orders.find((o) => o.id === state.activeOrderId) ??
@@ -250,6 +332,8 @@ export function evaluateTutorialProgress(
     state.orders.find((o) => o.id === state.activeOrderId)?.pcBuild ??
     tutorialOrder?.pcBuild ??
     state.sandboxPC;
+
+  const compat = evaluateCompatibility(activeBuild);
 
   const assemblyReadyForPower = Boolean(
     activeBuild.caseId &&
@@ -270,54 +354,73 @@ export function evaluateTutorialProgress(
 
   const postPassed = runPOST(activeBuild).passed;
   const driversComplete = Object.values(activeBuild.drivers).every(Boolean);
-  const osReady = Boolean(
+  const osInstalled = Boolean(
     activeBuild.osState.setupCompleted &&
       activeBuild.osState.installedOS &&
-      !activeBuild.osState.corrupted &&
-      driversComplete
+      !activeBuild.osState.corrupted
   );
-  const benchmarkAndClosed = Boolean(
-    activeBuild.benchmarks?.stabilityPassed && !activeBuild.sidePanelOpen
-  );
+  const desktopComplete = Boolean(osInstalled && driversComplete && activeBuild.benchmarks?.stabilityPassed);
+  const networkHealthy = evaluateNetworkHealth(activeBuild).online;
 
-  // Automatic monotonic progression while tutorial is active & uncompleted
-  let nextChapter = tut.chapterIndex;
+  // Track interactive milestone flags cleanly without resetting monotonic progress
+  const checkedCompatibility = Boolean(tut.checkedCompatibility || (assemblyReadyForPower && compat.compatible));
+  const checkedDiagnostics = Boolean(
+    tut.checkedDiagnostics ||
+      activeStation === 'repair_table' ||
+      (tutorialOrder && tutorialOrder.usedDiagnosticTools.length > 0) ||
+      postPassed
+  );
+  const openedDesktop = Boolean(tut.openedDesktop || osInstalled);
+  const ranCmdCommand = Boolean(tut.ranCmdCommand || (desktopComplete && networkHealthy && orderDelivered));
+
+  let nextChapter = Math.min(TUTORIAL_TOTAL_CHAPTERS - 1, Math.max(0, tut.chapterIndex));
   if (tut.active && !tut.completed && !tut.skipped) {
-    if (nextChapter === 0 && (tut.visitedStationCount >= 1 || orderAccepted)) {
+    if (nextChapter === 0 && (tut.visitedStationCount >= 1 || activeStation !== 'overview' || orderAccepted)) {
       nextChapter = 1;
     }
-    if (nextChapter === 1 && orderAccepted) {
+    if (nextChapter === 1 && (activeStation === 'workbench' || activeStation === 'reception' || orderAccepted)) {
       nextChapter = 2;
     }
-    if (nextChapter === 2 && assemblyReadyForPower) {
+    if (nextChapter === 2 && orderAccepted) {
       nextChapter = 3;
     }
-    if (nextChapter === 3 && postPassed && activeBuild.poweredOn) {
+    if (nextChapter === 3 && assemblyReadyForPower) {
       nextChapter = 4;
     }
-    if (nextChapter === 4 && osReady) {
+    if (nextChapter === 4 && checkedCompatibility) {
       nextChapter = 5;
     }
-    if (nextChapter === 5 && orderDelivered) {
+    if (nextChapter === 5 && (checkedDiagnostics || activeBuild.poweredOn)) {
       nextChapter = 6;
+    }
+    if (nextChapter === 6 && postPassed && activeBuild.poweredOn) {
+      nextChapter = 7;
+    }
+    if (nextChapter === 7 && osInstalled) {
+      nextChapter = 8;
+    }
+    if (nextChapter === 8 && desktopComplete) {
+      nextChapter = 9;
+    }
+    if (nextChapter === 9 && (orderDelivered || (ranCmdCommand && !activeBuild.sidePanelOpen))) {
+      nextChapter = 10;
     }
   }
 
-  const chapterMeta = TUTORIAL_CHAPTERS[Math.min(6, Math.max(0, nextChapter))];
+  const chapterMeta = TUTORIAL_CHAPTERS[nextChapter];
 
-  // Granular assembly hint when in Chapter 3 (index 2)
   let suggestedStage: AssemblyStageId | undefined = chapterMeta.hintAssemblyStage;
   let subHintId = chapterMeta.instruction.id;
   let subHintEn = chapterMeta.instruction.en;
 
-  if (nextChapter === 2) {
+  if (nextChapter === 3) {
     if (!activeBuild.caseId || !activeBuild.sidePanelOpen) {
       suggestedStage = 'preparation';
       subHintId = !activeBuild.caseId
-        ? 'Tahap 1: Pasang Casing PC dari inventaris di bagian bawah panel Meja Perakitan.'
+        ? 'Tahap 1: Pasang Casing PC dari inventaris di panel Meja Perakitan.'
         : 'Tahap 1: Klik "Buka Panel Samping" agar komponen dalam bisa dipasang.';
       subHintEn = !activeBuild.caseId
-        ? 'Stage 1: Install the PC Case from inventory at the bottom of the Workbench.'
+        ? 'Stage 1: Install the PC Case from inventory at the Workbench.'
         : 'Stage 1: Click "Open Side Panel" to access the interior.';
     } else if (!activeBuild.motherboardId || !activeBuild.motherboardScrewsSecured) {
       suggestedStage = 'motherboard';
@@ -345,14 +448,14 @@ export function evaluateTutorialProgress(
     ) {
       suggestedStage = 'cooling';
       subHintId = !activeBuild.thermalPasteApplied
-        ? 'Tahap 4: Klik "Oleskan Pasta Termal", lalu pasang CPU Cooler dan kencangkan baut + colok kabel CPU_FAN.'
+        ? 'Tahap 4: Klik "Oleskan Pasta Termal", pasang CPU Cooler, kencangkan baut & colok kabel CPU_FAN.'
         : !activeBuild.coolerId
         ? 'Tahap 4: Pasang CPU Cooler dari inventaris.'
         : 'Tahap 4: Kencangkan baut cooler (Obeng) dan hubungkan kabel CPU_FAN.';
       subHintEn = 'Stage 4: Apply thermal paste, install CPU Cooler, tighten screws, and plug CPU_FAN.';
     } else if (activeBuild.ramIds.length < 2) {
       suggestedStage = 'ram';
-      subHintId = `Tahap 5: Pasang 2 keping RAM DDR4 (terpasang ${activeBuild.ramIds.length}/2) untuk mengaktifkan Dual-Channel 16GB.`;
+      subHintId = `Tahap 5: Pasang 2 keping RAM DDR4 (${activeBuild.ramIds.length}/2) untuk mode Dual-Channel 16GB.`;
       subHintEn = `Stage 5: Install 2 DDR4 RAM modules (${activeBuild.ramIds.length}/2) for 16GB Dual-Channel.`;
     } else if (activeBuild.storageIds.length === 0 || !activeBuild.storageCablesConnected) {
       suggestedStage = 'storage';
@@ -364,9 +467,9 @@ export function evaluateTutorialProgress(
     } else if (!activeBuild.gpuId || !activeBuild.gpuBracketSecured || !activeBuild.gpuPowerConnected) {
       suggestedStage = 'gpu';
       subHintId = !activeBuild.gpuId
-        ? 'Tahap 7: Pasang Kartu Grafis (GPU) GTX 1650 karena CPU i3-10100F tidak memiliki grafis terintegrasi.'
+        ? 'Tahap 7: Pasang GPU GTX 1650 ke slot PCIe x16.'
         : 'Tahap 7: Baut bracket GPU (Obeng) dan colok kabel daya GPU.';
-      subHintEn = 'Stage 7: Install the GTX 1650 GPU, screw bracket, and plug PCIe power.';
+      subHintEn = 'Stage 7: Install GTX 1650 GPU, screw bracket, and connect PCIe power.';
     } else if (!activeBuild.psuId || !activeBuild.atx24PinConnected || !activeBuild.cpu8PinConnected) {
       suggestedStage = 'psu';
       subHintId = !activeBuild.psuId
@@ -375,36 +478,41 @@ export function evaluateTutorialProgress(
       subHintEn = 'Stage 8: Install 450W PSU and connect 24-Pin ATX, 8-Pin CPU, and SATA power.';
     } else {
       suggestedStage = 'cables';
-      subHintId = 'Tahap 9: Hubungkan Kabel Tombol Power/Reset (JFP1) dan kabel kipas casing.';
-      subHintEn = 'Stage 9: Connect Front Panel Power/Reset (JFP1) and case fan headers.';
+      subHintId = 'Tahap 9: Hubungkan Kabel Tombol Power (JFP1) dan kabel kipas casing.';
+      subHintEn = 'Stage 9: Connect Front Panel Power Switch (JFP1) and case fan headers.';
     }
-  } else if (nextChapter === 3) {
+  } else if (nextChapter === 6) {
     subHintId = !activeBuild.monitorConnected
       ? 'Tahap 11: Hubungkan Kabel Monitor & Keyboard, lalu klik "Nyalakan PC & Buka Layar Uji".'
-      : 'Tekan tombol "Nyalakan PC" di kanan atas Layar Pengujian untuk menjalankan POST.';
+      : 'Tekan tombol "Nyalakan PC" di Layar Pengujian untuk menjalankan POST.';
     subHintEn = !activeBuild.monitorConnected
       ? 'Stage 11: Connect Monitor & Keyboard cables, then click Power On & Open Monitor.'
       : 'Click "Power On" in the Monitor screen to run POST.';
-  } else if (nextChapter === 4) {
+  } else if (nextChapter === 7) {
     if (!activeBuild.usbBootMediaInserted) {
       subHintId = 'Langkah OS 1/4: Pilih "Windows 11 USB" di bar atas layar uji, lalu klik "Pasang USB".';
       subHintEn = 'OS Step 1/4: Select "Windows 11 USB" at the top of the monitor and click Insert USB.';
     } else if (activeBuild.biosSettings.bootPriority[0] !== 'usb' && !activeBuild.osState.setupCompleted) {
-      subHintId = 'Langkah OS 2/4: Masuk ke BIOS -> tab Boot -> naikkan USB Flash ke urutan #1, lalu Simpan & Restart (F10).';
+      subHintId = 'Langkah OS 2/4: Masuk BIOS -> tab Boot -> atur USB Flash ke #1, lalu Simpan & Restart (F10).';
       subHintEn = 'OS Step 2/4: Enter BIOS -> Boot tab -> move USB Flash to #1, then Save & Reboot (F10).';
-    } else if (!activeBuild.osState.setupCompleted) {
-      subHintId = 'Langkah OS 3/4: Pada Installer OS, buat partisi EFI & Sistem, klik "Format Partisi Sistem", lalu Instal Windows 11.';
-      subHintEn = 'OS Step 3/4: In OS Setup, create EFI & System partitions, Format System, and Install Windows 11.';
     } else {
-      subHintId = 'Langkah OS 4/4: Setelah masuk Desktop, klik "Instal Semua" pada Manajer Driver.';
-      subHintEn = 'OS Step 4/4: On Desktop, click "Install All" in Driver Manager.';
+      subHintId = 'Langkah OS 3/4: Buat & format partisi EFI + System, jalankan instalasi Windows 11 hingga pengaturan akun OOBE selesai.';
+      subHintEn = 'OS Step 3/4: Create & format EFI + System partitions, install Windows 11, and finish OOBE setup.';
     }
-  } else if (nextChapter === 5) {
-    if (!activeBuild.benchmarks?.stabilityPassed) {
-      subHintId = 'Jalankan salah satu Uji Benchmark di kanan layar Desktop OS hingga muncul status STABILITAS LULUS.';
-      subHintEn = 'Run any Benchmark test on the OS Desktop until STABILITY PASS appears.';
+  } else if (nextChapter === 8) {
+    if (!driversComplete) {
+      subHintId = 'Buka "Manajer Driver" di Desktop OS dan klik "Instal Semua" untuk melengkapi 6 kategori driver.';
+      subHintEn = 'Open Driver Manager on the Virtual Desktop and click "Install All" for all 6 drivers.';
+    } else {
+      subHintId = 'Buka aplikasi "Benchmark" di Desktop OS dan jalankan uji performa hingga status STABILITAS LULUS.';
+      subHintEn = 'Open Benchmark Suite on the Virtual Desktop and run a test until STABILITY PASS.';
+    }
+  } else if (nextChapter === 9) {
+    if (!tut.ranCmdCommand) {
+      subHintId = 'Buka "Command Prompt" di Desktop OS, ketik "ipconfig" lalu "ping 8.8.8.8", dan tutup panel samping casing untuk serah terima.';
+      subHintEn = 'Open Command Prompt on the Virtual Desktop, run "ipconfig" and "ping 8.8.8.8", close side panel, and deliver at Reception.';
     } else if (activeBuild.sidePanelOpen) {
-      subHintId = 'Tutup Layar Uji lalu buka Tahap 10 (Inspeksi) di Meja Perakitan dan tutup Panel Samping casing.';
+      subHintId = 'Tutup Layar Uji lalu tutup Panel Samping casing di Tahap 10 Meja Perakitan.';
       subHintEn = 'Close Monitor, open Stage 10 at Workbench, and close the PC side panel.';
     } else {
       subHintId = 'Buka Meja Resepsionis dan klik tombol hijau "Serahkan & Terima Bayaran"!';
@@ -413,16 +521,20 @@ export function evaluateTutorialProgress(
   }
 
   const readyToClaimReward =
-    nextChapter === 6 &&
+    nextChapter === TUTORIAL_TOTAL_CHAPTERS - 1 &&
     (tut.checkedBusinessPC || activeStation === 'business_pc' || activeStation === 'shelves') &&
     !tut.rewardClaimed;
 
   const doneCount = nextChapter + (readyToClaimReward || tut.completed ? 1 : 0);
-  const progressPercent = Math.min(100, Math.round((doneCount / TUTORIAL_CHAPTERS.length) * 100));
+  const progressPercent = Math.min(100, Math.round((doneCount / TUTORIAL_TOTAL_CHAPTERS) * 100));
 
   const nextTutState: TutorialState = {
     ...tut,
     chapterIndex: nextChapter,
+    checkedCompatibility,
+    checkedDiagnostics,
+    openedDesktop,
+    ranCmdCommand,
     checkedBusinessPC:
       tut.checkedBusinessPC || activeStation === 'business_pc' || activeStation === 'shelves',
   };
@@ -477,7 +589,6 @@ export function getObjectiveSummary(
     };
   }
 
-  // Career objective tracker when tutorial is completed/skipped
   const activeOrder =
     state.orders.find((o) => o.id === state.activeOrderId && o.status !== 'Delivered' && o.status !== 'Cancelled') ??
     state.orders.find((o) => o.status === 'Accepted' || o.status === 'In Progress' || o.status === 'Testing');
@@ -510,7 +621,7 @@ export function getObjectiveSummary(
     };
   }
 
-  const val = validateOrderCompletion(activeOrder);
+  const val = validateOrderCompletion(activeOrder, lang);
   if (val.ready) {
     return {
       title: `${activeOrder.orderNumber} · ${lang === 'en' ? 'Ready for Delivery!' : 'Siap Diserahkan!'}`,
@@ -548,13 +659,13 @@ export function getObjectiveSummary(
             ...val.reasons.slice(0, 3),
             needsRepairBench
               ? 'Use the Repair Table tools first to diagnose hidden faults.'
-              : 'Use Workbench for hardware parts and PC Screen for BIOS/OS/Drivers/Benchmark.',
+              : 'Use Workbench for hardware parts and PC Screen for BIOS/OS/Drivers/Network/Benchmark.',
           ]
         : [
             ...val.reasons.slice(0, 3),
             needsRepairBench
               ? 'Gunakan alat di Meja Perbaikan untuk melacak kerusakan tersembunyi.'
-              : 'Gunakan Meja Perakitan untuk hardware dan Layar PC untuk BIOS/OS/Driver/Benchmark.',
+              : 'Gunakan Meja Perakitan untuk hardware dan Layar PC untuk BIOS/OS/Driver/Jaringan/Benchmark.',
           ],
     targetStation: needsRepairBench ? 'repair_table' : 'workbench',
   };

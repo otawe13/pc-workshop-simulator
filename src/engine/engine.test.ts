@@ -10,13 +10,27 @@ import {
 } from './simulationEngine';
 import {
   calculateBusinessLevel,
+  calculateDailyOperatingExpense,
   calculateNetWorth,
   createInitialGameState,
+  generateCustomerOrder,
+  getDynamicPurchasePrice,
   sortLeaderboardRecords,
   validateOrderCompletion,
 } from './businessEngine';
 import { buildCustomerBrokenPC, runDiagnosticTool } from './diagnosticsEngine';
-import { validateFrontendSupabaseConfig } from './supabaseClient';
+import { HARDWARE_CATALOG } from './hardwareDatabase';
+import {
+  executeVirtualCmdCommand,
+  evaluateNetworkHealth,
+  isValidIPv4,
+  repairNetworkWithTroubleshooter,
+} from './virtualOsEngine';
+import {
+  formatSupabaseError,
+  normalizeSupabaseUrl,
+  validateFrontendSupabaseConfig,
+} from './supabaseClient';
 import { LeaderboardRecord } from '../types/game';
 
 test('Compatibility engine catches CPU socket, DDR generation, GPU length, BIOS version, and PSU wattage', () => {
@@ -209,16 +223,51 @@ test('Supabase config defaults to offline mode cleanly and blocks secret/service
   const validPub = validateFrontendSupabaseConfig('https://demo.supabase.co', 'sb_publishable_safe_key');
   assert.equal(validPub.mode, 'online');
   assert.equal(validPub.configured, true);
+  assert.equal(validPub.normalizedUrl, 'https://demo.supabase.co');
+
+  // Normalize accidental /rest/v1 & /auth/v1 suffixes, trailing slashes, and wrapping quotes
+  assert.equal(
+    normalizeSupabaseUrl(' "https://demo.supabase.co/rest/v1/" ').url,
+    'https://demo.supabase.co'
+  );
+  assert.equal(
+    normalizeSupabaseUrl(" 'https://demo.supabase.co/auth/v1/' ").url,
+    'https://demo.supabase.co'
+  );
+  assert.equal(
+    normalizeSupabaseUrl('https://demo.supabase.co/rest/v1/leaderboard_statistics').url,
+    'https://demo.supabase.co'
+  );
+  assert.equal(
+    normalizeSupabaseUrl('https://supa.example.com/custom/auth/v1/').url,
+    'https://supa.example.com/custom'
+  );
+  const restCfg = validateFrontendSupabaseConfig(
+    'https://demo.supabase.co/rest/v1',
+    '"sb_publishable_safe_key"'
+  );
+  assert.equal(restCfg.mode, 'online');
+  assert.equal(restCfg.normalizedUrl, 'https://demo.supabase.co');
+
+  // Dashboard URL must be rejected cleanly
+  const dashRes = normalizeSupabaseUrl('https://supabase.com/dashboard/project/demo');
+  assert.equal(dashRes.url, null);
+  assert.ok(dashRes.error?.includes('Dashboard'));
+
+  // Error translator handles PostgREST "Invalid path specified in request URL"
+  const pathErrMsg = formatSupabaseError({ message: 'Invalid path specified in request URL' }, 'id');
+  assert.ok(pathErrMsg.includes('VITE_SUPABASE_URL'));
+  assert.ok(pathErrMsg.includes('/rest/v1'));
 });
 
-import { generateCustomerOrder } from './businessEngine';
 import { DEFAULT_SETTINGS } from './saveManager';
-import { evaluateTutorialProgress, getObjectiveSummary } from './tutorialEngine';
+import { evaluateTutorialProgress, getObjectiveSummary, TUTORIAL_TOTAL_CHAPTERS } from './tutorialEngine';
 import { getBusinessLevelLabel, t } from '../i18n/translations';
 import { getEducationEntry } from '../i18n/hardwareEducation';
 
 test('Indonesian localization defaults, translations, and hardware education entries work properly', () => {
   assert.equal(DEFAULT_SETTINGS.language, 'id');
+  assert.equal(DEFAULT_SETTINGS.dayDurationMinutes, 30);
   assert.equal(t('id', 'receptionTitle').includes('Resepsionis'), true);
   assert.equal(getBusinessLevelLabel(1, 'id'), 'Teknisi Pemula');
   assert.equal(getBusinessLevelLabel(5, 'id'), 'Bisnis PC Ternama');
@@ -227,23 +276,25 @@ test('Indonesian localization defaults, translations, and hardware education ent
   assert.ok(cpuEdu.howToInstall.length > 10);
 });
 
-test('Interactive 7-chapter tutorial progresses cleanly and computes objective summaries', () => {
+test('Interactive 11-chapter tutorial progresses cleanly and computes objective summaries', () => {
+  assert.equal(TUTORIAL_TOTAL_CHAPTERS, 11);
   const state = createInitialGameState('Bengkel Uji', 'Teknisi', 'normal', 'id');
   assert.ok(state.tutorialState?.active);
   assert.equal(state.tutorialState?.chapterIndex, 0);
 
-  // Chapter 1 -> Chapter 2 after visiting a station
+  // Chapter 0 -> Chapter 1 (parts_recognition) -> Chapter 2 (customer) when opening Reception
   state.tutorialState!.visitedStationCount = 1;
-  let eval1 = evaluateTutorialProgress(state, 'reception');
-  assert.equal(eval1.tutorial.chapterIndex, 1);
+  let ev = evaluateTutorialProgress(state, 'reception');
+  assert.equal(ev.tutorial.chapterIndex, 2);
 
   // Accept starter order -> Chapter 3 (assembly)
   state.orders[0].status = 'Accepted';
   state.activeOrderId = state.orders[0].id;
-  let eval2 = evaluateTutorialProgress(state, 'workbench');
-  assert.equal(eval2.tutorial.chapterIndex, 2);
+  state.tutorialState = ev.tutorial;
+  ev = evaluateTutorialProgress(state, 'workbench');
+  assert.equal(ev.tutorial.chapterIndex, 3);
 
-  // Complete all hardware assembly steps -> Chapter 4 (power_post)
+  // Complete all hardware assembly steps -> Chapter 4 (compatibility) -> Chapter 5 (diagnostics)
   const b = state.orders[0].pcBuild;
   b.caseId = 'case_budget_matx';
   b.sidePanelOpen = true;
@@ -269,17 +320,18 @@ test('Interactive 7-chapter tutorial progresses cleanly and computes objective s
   b.monitorConnected = true;
   b.keyboardConnected = true;
 
-  let eval3 = evaluateTutorialProgress(state, 'workbench');
-  assert.equal(eval3.tutorial.chapterIndex, 3);
+  state.tutorialState = ev.tutorial;
+  ev = evaluateTutorialProgress(state, 'workbench');
+  assert.equal(ev.tutorial.chapterIndex, 6); // compatibility & power_post readiness auto-advance cleanly
 
-  // Power on -> Chapter 5 (os_install)
+  // Power on -> Chapter 7 (os_install)
   b.poweredOn = true;
-  state.tutorialState = eval3.tutorial;
-  let eval4 = evaluateTutorialProgress(state, 'testing_station');
-  assert.equal(eval4.tutorial.chapterIndex, 4);
+  state.tutorialState = ev.tutorial;
+  ev = evaluateTutorialProgress(state, 'testing_station');
+  assert.equal(ev.tutorial.chapterIndex, 7);
 
   const obj = getObjectiveSummary(state, 'overview', 'id');
-  assert.ok(obj.title.includes('Bab 5'));
+  assert.ok(obj.title.includes('Bab 8'));
 });
 
 test('Customer generator spans all 10 diverse archetypes with valid gender metadata', () => {
@@ -294,4 +346,94 @@ test('Customer generator spans all 10 diverse archetypes with valid gender metad
   }
   assert.ok(seen.size >= 8);
 });
+
+test('Expanded hardware catalog preserves original IDs and spans all categories including addon & peripheral', () => {
+  assert.ok(HARDWARE_CATALOG.length >= 70, `Expected >= 70 items, got ${HARDWARE_CATALOG.length}`);
+  const categories = new Set(HARDWARE_CATALOG.map((i) => i.category));
+  for (const req of ['cpu', 'motherboard', 'ram', 'storage', 'gpu', 'psu', 'case', 'cooler', 'addon', 'peripheral', 'consumable']) {
+    assert.ok(categories.has(req as any), `Missing category: ${req}`);
+  }
+  for (const legacyId of ['cpu_i3_10100', 'mb_h510m', 'ram_ddr4_8', 'sto_sata_500', 'gpu_gtx1650', 'psu_450w', 'case_budget_matx', 'cool_stock']) {
+    assert.ok(HARDWARE_CATALOG.some((i) => i.id === legacyId), `Missing legacy ID: ${legacyId}`);
+  }
+});
+
+test('Compatibility checks catch Mini-ITX SFX PSU, radiator clearance, addon slots, and provide cause & fix suggestions', () => {
+  const itxBuild = createEmptyPCBuild('case_mini_itx_sfx');
+  itxBuild.psuId = 'psu_650w'; // ATX PSU does not fit SFX-only Mini-ITX
+  itxBuild.coolerId = 'cool_aio_360'; // 360mm radiator unsupported by Mini-ITX
+  itxBuild.motherboardId = 'mb_h510m'; // mATX in ITX + only 1 PCIe slot
+  itxBuild.addonIds = ['addon_wifi_6e', 'addon_capture_card']; // 2 addons > 1 slot
+
+  const report = evaluateCompatibility(itxBuild);
+  assert.equal(report.compatible, false);
+  const codes = report.issues.map((i) => i.code);
+  assert.ok(codes.includes('CASE_PSU_FORM_FACTOR'));
+  assert.ok(codes.includes('CASE_RADIATOR_UNSUPPORTED'));
+  assert.ok(codes.includes('PCIE_SLOTS_CROWDED'));
+  assert.ok(report.issues.every((i) => Boolean(i.cause) && Boolean(i.fixSuggestion)));
+});
+
+test('Virtual OS Engine executes CMD commands and repairs IPv4 network configuration safely', () => {
+  const pc = createEmptyPCBuild('case_airflow_atx');
+  pc.motherboardId = 'mb_b660m';
+  pc.cpuId = 'cpu_i3_12100';
+  pc.ramIds = ['ram_ddr4_8'];
+  pc.storageIds = ['sto_nvme_500'];
+  pc.psuId = 'psu_450w';
+  pc.osState.installedOS = 'Windows 11';
+  pc.osState.setupCompleted = true;
+  pc.drivers.network = true;
+
+  // Healthy default DHCP
+  assert.equal(evaluateNetworkHealth(pc).online, true);
+  assert.equal(isValidIPv4('192.168.1.50'), true);
+  assert.equal(isValidIPv4('999.10.0.1'), false);
+
+  const ipRes = executeVirtualCmdCommand('ipconfig', pc);
+  assert.ok(ipRes.outputLines.some((l) => l.includes('IPv4 Address')));
+
+  const pingRes = executeVirtualCmdCommand('ping 8.8.8.8', pc);
+  assert.ok(pingRes.outputLines.some((l) => l.includes('TTL=')));
+
+  // Break network with wrong static gateway & fault -> verify troubleshooter fixes it
+  pc.networkConfig = {
+    adapterName: 'Realtek PCIe 2.5GbE',
+    linkStatus: 'Limited',
+    mode: 'static',
+    ipv4Address: '169.254.10.5',
+    subnetMask: '255.255.0.0',
+    gateway: '0.0.0.0',
+    dnsPrimary: '0.0.0.0',
+    dnsSecondary: '',
+    linkSpeedMbps: 100,
+    packetLossPct: 100,
+  };
+  pc.faults.push({
+    id: 'f_net',
+    type: 'network_issue',
+    label: 'Static IP gateway mismatch',
+    clueByTool: {},
+    resolved: false,
+  });
+  assert.equal(evaluateNetworkHealth(pc).online, false);
+
+  const repaired = repairNetworkWithTroubleshooter(pc);
+  assert.equal(evaluateNetworkHealth(repaired.nextBuild).online, true);
+  assert.equal(repaired.nextBuild.faults.every((f) => f.resolved), true);
+});
+
+test('Daily market prices fluctuate deterministically after Day 1 and daily expenses scale with shop growth', () => {
+  const cpu = HARDWARE_CATALOG.find((i) => i.id === 'cpu_i5_12400f')!;
+  assert.equal(getDynamicPurchasePrice(cpu, 1), cpu.purchasePrice);
+  const day5Price = getDynamicPurchasePrice(cpu, 5);
+  assert.ok(day5Price >= Math.round(cpu.purchasePrice * 0.85) && day5Price <= Math.round(cpu.purchasePrice * 1.15));
+
+  const state = createInitialGameState('Bengkel Bisnis', 'Teknisi', 'normal', 'id');
+  const expDay1 = calculateDailyOperatingExpense(state);
+  assert.ok(expDay1 >= 65_000);
+  state.businessLevel = 4;
+  assert.ok(calculateDailyOperatingExpense(state) > expDay1);
+});
+
 

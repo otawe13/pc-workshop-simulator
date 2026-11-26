@@ -8,8 +8,11 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null check (char_length(username) between 2 and 24),
   workshop_name text not null check (char_length(workshop_name) between 2 and 40),
+  avatar_url text,
   created_at timestamptz not null default now()
 );
+
+alter table public.profiles add column if not exists avatar_url text;
 
 -- 2. Player Workshops (Fair start & financial state snapshot)
 create table if not exists public.player_workshops (
@@ -29,7 +32,19 @@ create table if not exists public.player_workshops (
   updated_at timestamptz not null default now()
 );
 
--- 3. Seasons
+-- 3. Cloud Save Game Slots (Strictly private per authenticated owner)
+create table if not exists public.player_saves (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  slot_id text not null default 'cloud_slot_1',
+  workshop_name text not null default 'PC Workshop',
+  game_day integer not null default 1 check (game_day >= 1),
+  save_payload jsonb not null,
+  updated_at timestamptz not null default now(),
+  unique(user_id, slot_id)
+);
+
+-- 4. Seasons
 create table if not exists public.seasons (
   id text primary key, -- 'weekly', 'monthly', 'all_time'
   label text not null,
@@ -43,7 +58,7 @@ insert into public.seasons (id, label) values
   ('all_time', 'All-Time Hall of Fame')
 on conflict (id) do nothing;
 
--- 4. Leaderboard Statistics
+-- 5. Leaderboard Statistics
 create table if not exists public.leaderboard_statistics (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -62,7 +77,7 @@ create table if not exists public.leaderboard_statistics (
   unique(user_id, season)
 );
 
--- 5. Historical Rankings Archive
+-- 6. Historical Rankings Archive
 create table if not exists public.leaderboard_history (
   id uuid primary key default gen_random_uuid(),
   season text not null,
@@ -77,6 +92,7 @@ create table if not exists public.leaderboard_history (
 -- Enable Row Level Security
 alter table public.profiles enable row level security;
 alter table public.player_workshops enable row level security;
+alter table public.player_saves enable row level security;
 alter table public.leaderboard_statistics enable row level security;
 alter table public.leaderboard_history enable row level security;
 alter table public.seasons enable row level security;
@@ -86,11 +102,15 @@ drop policy if exists "Public read profiles" on public.profiles;
 drop policy if exists "Owner upsert profile" on public.profiles;
 drop policy if exists "Owner update profile" on public.profiles;
 drop policy if exists "Owner read workshop" on public.player_workshops;
+drop policy if exists "Owner read cloud saves" on public.player_saves;
+drop policy if exists "Owner write cloud saves" on public.player_saves;
+drop policy if exists "Owner update cloud saves" on public.player_saves;
+drop policy if exists "Owner delete cloud saves" on public.player_saves;
 drop policy if exists "Public read seasons" on public.seasons;
 drop policy if exists "Public read leaderboard" on public.leaderboard_statistics;
 drop policy if exists "Public read history" on public.leaderboard_history;
 
--- Profiles: public display fields only (no email column stored here), strict owner writes
+-- Profiles: public display fields only, strict owner writes
 create policy "Public read profiles" on public.profiles
   for select using (true);
 create policy "Owner upsert profile" on public.profiles
@@ -98,9 +118,17 @@ create policy "Owner upsert profile" on public.profiles
 create policy "Owner update profile" on public.profiles
   for update using (auth.uid() = id) with check (auth.uid() = id);
 
--- Player Workshops: only the authenticated owner can read their raw financial row directly
+-- Player Workshops & Cloud Saves: strictly private to authenticated owner
 create policy "Owner read workshop" on public.player_workshops
   for select using (auth.uid() = user_id);
+create policy "Owner read cloud saves" on public.player_saves
+  for select using (auth.uid() = user_id);
+create policy "Owner write cloud saves" on public.player_saves
+  for insert with check (auth.uid() = user_id);
+create policy "Owner update cloud saves" on public.player_saves
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "Owner delete cloud saves" on public.player_saves
+  for delete using (auth.uid() = user_id);
 
 -- Seasons & Leaderboards: public read, writes happen strictly via server-validated RPC
 create policy "Public read seasons" on public.seasons
@@ -110,7 +138,7 @@ create policy "Public read leaderboard" on public.leaderboard_statistics
 create policy "Public read history" on public.leaderboard_history
   for select using (true);
 
--- Auto-create profile when a new Supabase Auth user signs up (works even with email confirmation enabled)
+-- Auto-create profile when a new Supabase Auth user signs up (supports email + Google OAuth)
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -120,25 +148,28 @@ as $$
 declare
   v_raw_user text;
   v_workshop text;
+  v_avatar text;
 begin
   v_raw_user := coalesce(
     nullif(trim(new.raw_user_meta_data ->> 'username'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''),
     'Tech_' || substr(replace(new.id::text, '-', ''), 1, 6)
   );
   v_workshop := coalesce(
     nullif(trim(new.raw_user_meta_data ->> 'workshop_name'), ''),
     'PC Workshop'
   );
+  v_avatar := nullif(trim(new.raw_user_meta_data ->> 'avatar_url'), '');
 
-  insert into public.profiles (id, username, workshop_name)
-  values (new.id, left(v_raw_user, 24), left(v_workshop, 40))
+  insert into public.profiles (id, username, workshop_name, avatar_url)
+  values (new.id, left(v_raw_user, 24), left(v_workshop, 40), v_avatar)
   on conflict (id) do nothing;
 
   return new;
 exception
   when unique_violation then
-    insert into public.profiles (id, username, workshop_name)
-    values (new.id, 'Tech_' || substr(replace(new.id::text, '-', ''), 1, 8), left(v_workshop, 40))
+    insert into public.profiles (id, username, workshop_name, avatar_url)
+    values (new.id, 'Tech_' || substr(replace(new.id::text, '-', ''), 1, 8), left(v_workshop, 40), v_avatar)
     on conflict (id) do nothing;
     return new;
 end;
@@ -192,7 +223,6 @@ begin
     on conflict (id) do nothing;
   end if;
 
-  -- Server-side net worth calculation (never trust client-submitted net worth)
   v_computed_net_worth :=
     greatest(0, p_cash_balance)
     + greatest(0, p_inventory_value)

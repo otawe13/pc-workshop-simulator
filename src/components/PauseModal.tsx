@@ -28,8 +28,8 @@ export const PauseModal: React.FC<PauseModalProps> = ({
   onReturnTitle,
 }) => {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/75">
-      <div className="w-full max-w-sm bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl p-6 space-y-5">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 bg-black/75">
+      <div className="w-full max-w-sm max-h-[92dvh] overflow-y-auto modal-landscape-shell bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
         <div>
           <h2 className="font-display text-xl font-bold text-slate-100">{t(lang, 'pausedTitle')}</h2>
           <p className="text-xs text-slate-400 mt-0.5">
@@ -52,7 +52,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
           <button
             type="button"
             onClick={onResume}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold cursor-pointer"
+            className="touch-target w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-sm font-semibold cursor-pointer"
           >
             <Play className="w-4 h-4" />
             {t(lang, 'resumeWorkshop')}
@@ -60,7 +60,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
           <button
             type="button"
             onClick={onQuickSave}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-medium cursor-pointer"
+            className="touch-target w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-medium cursor-pointer"
           >
             <Save className="w-4 h-4 text-emerald-400" />
             {t(lang, 'saveProgressNow')}
@@ -68,7 +68,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
           <button
             type="button"
             onClick={onOpenSettings}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-medium cursor-pointer"
+            className="touch-target w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 text-sm font-medium cursor-pointer"
           >
             <Settings className="w-4 h-4 text-sky-400" />
             {t(lang, 'settings')}
@@ -76,7 +76,7 @@ export const PauseModal: React.FC<PauseModalProps> = ({
           <button
             type="button"
             onClick={onReturnTitle}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium cursor-pointer"
+            className="touch-target w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-sm font-medium cursor-pointer"
           >
             <Home className="w-4 h-4" />
             {t(lang, 'mainMenu')}

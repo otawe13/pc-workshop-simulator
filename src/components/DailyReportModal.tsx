@@ -18,8 +18,8 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
   onStartNextDay,
 }) => {
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-black/75">
-      <div className="w-full max-w-md bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl p-6 space-y-5">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-4 bg-black/75">
+      <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto modal-landscape-shell bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl p-4 sm:p-6 space-y-4 sm:space-y-5">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-lg bg-sky-600/20 text-sky-400">
             <CalendarCheck className="w-6 h-6" />
@@ -28,7 +28,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
             <h2 className="font-display text-xl font-bold text-slate-100">
               {t(lang, 'dailyReportTitle', { day: report.day })}
             </h2>
-            <p className="text-xs text-slate-400">{t(lang, 'dailyReportSub')}</p>
+            <p className="text-xs text-slate-400 landscape-hide">{t(lang, 'dailyReportSub')}</p>
           </div>
         </div>
 
@@ -87,7 +87,7 @@ export const DailyReportModal: React.FC<DailyReportModalProps> = ({
         <button
           type="button"
           onClick={onStartNextDay}
-          className="w-full py-3 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm cursor-pointer"
+          className="touch-target w-full py-3 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-sm cursor-pointer"
         >
           {t(lang, 'startNextDayBtn', { day: report.day + 1 })}
         </button>

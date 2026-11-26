@@ -38,22 +38,22 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
   const totalChapters = TUTORIAL_CHAPTERS.length;
   const stepText = lang === 'en' ? subHintEn : subHintId;
 
-  // On mobile, if the workbench drawer is open on the right/full-width, keep tutorial bar docked cleanly at top-left or compact
-  const positionClass =
-    activeStation === 'workbench'
-      ? 'bottom-16 sm:bottom-20 left-2 sm:left-4'
-      : 'bottom-16 sm:bottom-20 left-2 sm:left-4';
+  // On small screens (< sm), hide tutorial card while workbench bottom drawer is open so user has clear 3D + panel view
+  const visibilityClass = activeStation === 'workbench' ? 'hidden md:block' : '';
+  const positionClass = 'bottom-16 sm:bottom-20 left-2 sm:left-4 tutorial-landscape-compact';
 
   if (collapsed) {
     return (
-      <div className={`fixed ${positionClass} z-20 pointer-events-auto max-w-[calc(100vw-16px)]`}>
+      <div className={`fixed ${positionClass} ${visibilityClass} z-20 pointer-events-auto max-w-[calc(100vw-16px)]`}>
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#0c1220]/95 border border-sky-500/60 text-xs font-semibold text-sky-100 shadow-2xl cursor-pointer"
+          className="touch-target flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-[#0c1220]/95 border border-sky-500/60 text-xs font-semibold text-sky-100 shadow-2xl cursor-pointer"
         >
           <Sparkles className="w-4 h-4 text-sky-400 shrink-0" />
-          <span className="truncate max-w-[200px] sm:max-w-[280px]">{currentChapter.title[lang]}</span>
+          <span className="truncate max-w-[180px] sm:max-w-[260px]">
+            {currentChapter.index + 1}/{totalChapters} · {currentChapter.title[lang]}
+          </span>
           <span className="font-mono-num text-sky-300">{progressPercent}%</span>
           <ChevronUp className="w-4 h-4 text-slate-300 shrink-0" />
         </button>
@@ -65,10 +65,10 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
     <aside
       aria-label={t(lang, 'tutorialBadge')}
       data-testid="tutorial-overlay"
-      className={`fixed ${positionClass} z-20 pointer-events-auto w-[calc(100vw-16px)] sm:w-[376px] bg-[#0c1220]/96 border border-sky-500/60 rounded-xl shadow-2xl overflow-hidden`}
+      className={`fixed ${positionClass} ${visibilityClass} z-20 pointer-events-auto w-[calc(100vw-16px)] sm:w-[376px] bg-[#0c1220]/96 border border-sky-500/60 rounded-xl shadow-2xl overflow-hidden`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-slate-900/90 border-b border-slate-800">
+      <div className="flex items-center justify-between gap-2 px-3.5 py-2 bg-slate-900/90 border-b border-slate-800">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-sky-400">
             <Sparkles className="w-3.5 h-3.5 shrink-0" />
@@ -86,7 +86,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             type="button"
             aria-label="Minimize tutorial"
             onClick={() => setCollapsed(true)}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+            className="touch-target p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
           >
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -102,7 +102,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
       </div>
 
       {/* Body */}
-      <div className="p-3.5 space-y-2.5 text-xs">
+      <div className="p-3 sm:p-3.5 space-y-2 text-xs">
         {currentChapter.index === 0 && (
           <div className="font-semibold text-sky-200">{currentChapter.title[lang]}</div>
         )}
@@ -126,14 +126,14 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
                   setConfirmSkip(false);
                   onSkip();
                 }}
-                className="flex-1 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold cursor-pointer"
+                className="touch-target flex-1 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold cursor-pointer"
               >
                 {t(lang, 'tutorialConfirmSkipYes')}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirmSkip(false)}
-                className="flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium cursor-pointer"
+                className="touch-target flex-1 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium cursor-pointer"
               >
                 {t(lang, 'tutorialConfirmSkipNo')}
               </button>
@@ -145,7 +145,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
               <button
                 type="button"
                 onClick={onClaimReward}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer"
+                className="touch-target w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold cursor-pointer"
               >
                 <Award className="w-4 h-4 shrink-0" />
                 <span>{t(lang, 'tutorialClaimReward')}</span>
@@ -154,7 +154,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
               <button
                 type="button"
                 onClick={() => onGoToTarget(targetStation, suggestedAssemblyStage)}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold cursor-pointer"
+                className="touch-target flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold cursor-pointer"
               >
                 <Compass className="w-3.5 h-3.5 shrink-0" />
                 <span>{t(lang, 'tutorialGoToTarget')}</span>
@@ -164,7 +164,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             <button
               type="button"
               onClick={() => setShowWhy((v) => !v)}
-              className="flex items-center gap-1 py-2 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium cursor-pointer"
+              className="touch-target flex items-center gap-1 py-2 px-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium cursor-pointer"
               title={t(lang, 'tutorialNextHint')}
             >
               <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
@@ -174,7 +174,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             <button
               type="button"
               onClick={() => setConfirmSkip(true)}
-              className="flex items-center gap-1 py-2 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium cursor-pointer"
+              className="touch-target flex items-center gap-1 py-2 px-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 font-medium cursor-pointer"
             >
               <SkipForward className="w-3.5 h-3.5" />
               <span>{t(lang, 'tutorialSkip')}</span>

@@ -65,12 +65,12 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-start p-4 sm:p-10 pointer-events-none bg-gradient-to-r from-[#070b13]/92 via-[#070b13]/68 to-transparent">
-      <div className="w-full max-w-lg pointer-events-auto bg-[#0c1220]/95 border border-slate-700/70 rounded-xl p-6 sm:p-8 shadow-2xl">
+    <div className="fixed inset-0 z-20 flex items-center justify-start p-3 sm:p-10 pointer-events-none bg-gradient-to-r from-[#070b13]/92 via-[#070b13]/68 to-transparent">
+      <div className="w-full max-w-lg max-h-[94dvh] overflow-y-auto modal-landscape-shell pointer-events-auto bg-[#0c1220]/95 border border-slate-700/70 rounded-xl p-4 sm:p-8 shadow-2xl">
         {/* Top Row: Brand + Quick Language Toggle */}
-        <div className="flex items-start justify-between gap-3 mb-6">
+        <div className="flex items-start justify-between gap-3 mb-4 sm:mb-6">
           <div className="flex items-center gap-3.5 min-w-0">
-            <svg viewBox="0 0 56 56" className="w-14 h-14 shrink-0" aria-hidden="true">
+            <svg viewBox="0 0 56 56" className="w-11 h-11 sm:w-14 sm:h-14 shrink-0" aria-hidden="true">
               <rect x="4" y="6" width="48" height="44" rx="8" fill="#0f172a" stroke="#38bdf8" strokeWidth="2.5" />
               <rect x="12" y="14" width="20" height="28" rx="3" fill="#1e293b" stroke="#64748b" strokeWidth="1.5" />
               <circle cx="22" cy="24" r="6" fill="none" stroke="#38bdf8" strokeWidth="2" />
@@ -80,7 +80,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <line x1="36" y1="38" x2="44" y2="38" stroke="#38bdf8" strokeWidth="2.5" />
             </svg>
             <div className="min-w-0">
-              <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-50 leading-tight">
+              <h1 className="font-display text-xl sm:text-3xl font-bold tracking-tight text-slate-50 leading-tight">
                 {t(lang, 'appTitle')}
               </h1>
               <p className="text-xs sm:text-sm text-sky-400 font-medium tracking-wide mt-0.5">
@@ -124,7 +124,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                   type="button"
                   data-start="true"
                   onClick={onContinueGame}
-                  className="col-span-1 sm:col-span-2 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-base transition-colors cursor-pointer"
+                  className="touch-target col-span-1 sm:col-span-2 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-base transition-colors cursor-pointer"
                 >
                   <Play className="w-5 h-5" />
                   {t(lang, 'continueWorkshop')}
@@ -134,7 +134,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
                   type="button"
                   data-start="true"
                   onClick={() => onStartNewGame(workshopName, playerUsername, 'normal')}
-                  className="col-span-1 sm:col-span-2 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-base transition-colors cursor-pointer"
+                  className="touch-target col-span-1 sm:col-span-2 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-base transition-colors cursor-pointer"
                 >
                   <Play className="w-5 h-5" />
                   {t(lang, 'startCareer')}
@@ -144,7 +144,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setSubView('new_game')}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
+                className="touch-target flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
               >
                 <PlusCircle className="w-4 h-4 text-sky-400" />
                 {t(lang, 'newGameSetup')}
@@ -153,7 +153,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setSubView('load_game')}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
+                className="touch-target flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
               >
                 <FolderOpen className="w-4 h-4 text-amber-400" />
                 {t(lang, 'loadGame')}
@@ -162,7 +162,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenLeaderboard('global')}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
+                className="touch-target flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
               >
                 <Globe className="w-4 h-4 text-emerald-400" />
                 {t(lang, 'globalLeaderboard')}
@@ -171,7 +171,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenLeaderboard('local')}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
+                className="touch-target flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-sm font-medium transition-colors cursor-pointer"
               >
                 <Trophy className="w-4 h-4 text-sky-400" />
                 {t(lang, 'localLeaderboard')}
@@ -180,7 +180,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <button
                 type="button"
                 onClick={onOpenProfile}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-sm font-medium transition-colors cursor-pointer"
+                className="touch-target flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-sm font-medium transition-colors cursor-pointer"
               >
                 <User className="w-4 h-4 text-slate-300" />
                 {t(lang, 'playerProfile')}
@@ -189,7 +189,7 @@ export const TitleScreen: React.FC<TitleScreenProps> = ({
               <button
                 type="button"
                 onClick={onOpenSettings}
-                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-sm font-medium transition-colors cursor-pointer"
+                className="touch-target flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 text-slate-200 text-sm font-medium transition-colors cursor-pointer"
               >
                 <Settings className="w-4 h-4 text-slate-300" />
                 {t(lang, 'settings')}

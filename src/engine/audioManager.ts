@@ -22,6 +22,7 @@ class AudioManager {
     showHints: true,
     showObjectives: true,
     showHardwareEducation: true,
+    dayDurationMinutes: 30,
   };
 
   private ensureContext(): AudioContext | null {

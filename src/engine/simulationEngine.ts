@@ -8,6 +8,7 @@ import {
 } from '../types/game';
 import { evaluateCompatibility } from './compatibilityEngine';
 import { getHardwareItem } from './hardwareDatabase';
+import { createDefaultNetworkConfig } from './virtualOsEngine';
 
 export function createEmptyPCBuild(caseId: string | null = null): PCBuildState {
   return {
@@ -19,9 +20,12 @@ export function createEmptyPCBuild(caseId: string | null = null): PCBuildState {
     storageIds: [],
     gpuId: null,
     psuId: null,
+    addonIds: [],
+    peripheralIds: [],
     fanCount: 2,
     sidePanelOpen: false,
     selectedTool: 'none',
+    dustLevel: 0,
     motherboardScrewsSecured: false,
     cpuSocketOpen: false,
     cpuRetentionClosed: false,
@@ -64,10 +68,15 @@ export function createEmptyPCBuild(caseId: string | null = null): PCBuildState {
           formatted: false,
         },
       ],
-      language: 'English (US)',
+      language: 'Indonesian / English',
+      keyboardLayout: 'US QWERTY',
       targetDriveId: null,
       installProgress: 0,
       setupCompleted: false,
+      oobeCompleted: false,
+      oobeUsername: 'Teknisi',
+      oobeComputerName: 'WORKSHOP-PC',
+      privacyTelemetry: false,
     },
     drivers: {
       chipset: false,
@@ -77,6 +86,7 @@ export function createEmptyPCBuild(caseId: string | null = null): PCBuildState {
       storage: false,
       peripheral: false,
     },
+    networkConfig: createDefaultNetworkConfig(false),
     benchmarks: null,
   };
 }
@@ -88,6 +98,8 @@ export function calculateCpuTempC(build: PCBuildState, underLoad = false): numbe
   const coolingCap = cooler?.coolingCapacityW ?? 70;
   const hasCoolingFault = build.faults.some((f) => !f.resolved && f.type === 'cooler_failure');
   const hasPasteFault = build.faults.some((f) => !f.resolved && f.type === 'overheating_paste');
+  const hasDustFault = build.faults.some((f) => !f.resolved && f.type === 'dust_clogged');
+  const dustPenalty = Math.round(((build.dustLevel ?? 0) / 100) * 14) + (hasDustFault ? 12 : 0);
 
   let baseIdle = 34;
   if (!cooler || !build.coolerSecured || hasCoolingFault) {
@@ -102,6 +114,8 @@ export function calculateCpuTempC(build: PCBuildState, underLoad = false): numbe
   if (!build.cpuFanConnected) {
     baseIdle += 15;
   }
+  baseIdle += dustPenalty;
+
   if (build.biosSettings.fanCurveMode === 'turbo') {
     baseIdle -= 4;
   } else if (build.biosSettings.fanCurveMode === 'silent') {
@@ -124,7 +138,6 @@ export function runPOST(build: PCBuildState): POSTResult {
 
   const unresolvedFault = (type: string) => build.faults.find((f) => !f.resolved && f.type === type);
 
-  // 1. Power & switch checks
   if (!psu || unresolvedFault('faulty_psu')) {
     return {
       passed: false,
@@ -139,7 +152,7 @@ export function runPOST(build: PCBuildState): POSTResult {
       cpuTempC: 25,
     };
   }
-  if (!build.frontPanelConnected) {
+  if (!build.frontPanelConnected || unresolvedFault('damaged_connector')) {
     return {
       passed: false,
       beepCount: 0,
@@ -182,7 +195,6 @@ export function runPOST(build: PCBuildState): POSTResult {
     };
   }
 
-  // 2. Motherboard & CPU checks
   if (!mb || !cpu || !build.cpuRetentionClosed) {
     return {
       passed: false,
@@ -198,14 +210,14 @@ export function runPOST(build: PCBuildState): POSTResult {
     };
   }
 
-  if (!compat.compatible) {
+  if (!compat.compatible || unresolvedFault('incompatible_ram')) {
     const firstErr = compat.issues.find((i) => i.severity === 'error');
     return {
       passed: false,
       beepCount: 4,
       errorCode: firstErr?.code ?? 'ERR_COMPATIBILITY',
-      message: `POST HALT: ${firstErr?.message ?? 'Hardware incompatibility detected.'}`,
-      details: compat.issues.map((i) => i.message),
+      message: `POST HALT: ${firstErr?.message ?? 'Hardware incompatibility detected (RAM/Component).'}`,
+      details: compat.issues.length > 0 ? compat.issues.map((i) => i.message) : ['Incompatible memory timing or generation fault.'],
       detectedCpu: cpu.model,
       detectedRamGB: compat.totalRamGB,
       detectedStorageCount: storages.length,
@@ -214,7 +226,6 @@ export function runPOST(build: PCBuildState): POSTResult {
     };
   }
 
-  // 3. RAM detection
   if (rams.length === 0 || unresolvedFault('missing_ram') || unresolvedFault('loose_ram')) {
     return {
       passed: false,
@@ -230,7 +241,6 @@ export function runPOST(build: PCBuildState): POSTResult {
     };
   }
 
-  // 4. Graphics & Display check
   const hasGpuPower = !gpu || (gpu.pciePowerPins ?? 0) === 0 || build.gpuPowerConnected;
   const hasFaultyGpu = Boolean(unresolvedFault('faulty_gpu'));
   const hasDisplaySource = (Boolean(gpu) && hasGpuPower && !hasFaultyGpu) || Boolean(cpu.hasIntegratedGraphics);
@@ -256,7 +266,6 @@ export function runPOST(build: PCBuildState): POSTResult {
     };
   }
 
-  // 5. Thermal emergency check
   const cpuTempC = calculateCpuTempC(build);
   if (cpuTempC >= 98) {
     return {
@@ -264,7 +273,7 @@ export function runPOST(build: PCBuildState): POSTResult {
       beepCount: 4,
       errorCode: 'ERR_CPU_OVERHEAT',
       message: 'THERMAL SHUTDOWN: CPU OVER TEMPERATURE ERROR!',
-      details: [`CPU reached ${cpuTempC}°C during POST. Check cooler mount, fan header, and thermal paste.`],
+      details: [`CPU reached ${cpuTempC}°C during POST. Check cooler mount, fan header, dust clogging, and thermal paste.`],
       detectedCpu: cpu.model,
       detectedRamGB: compat.totalRamGB,
       detectedStorageCount: storages.length,
@@ -273,7 +282,6 @@ export function runPOST(build: PCBuildState): POSTResult {
     };
   }
 
-  // 6. Storage warning (POST still passes so user can enter BIOS, unless storage faulty)
   const workingStorages = storages.filter((_, idx) => !(idx === 0 && unresolvedFault('faulty_storage')));
   if (workingStorages.length === 0) {
     details.push('Warning: No bootable storage drive detected.');
@@ -317,7 +325,7 @@ export function determineBootOutcome(build: PCBuildState): {
   const hasPartitionFault = build.faults.some((f) => !f.resolved && f.type === 'partition_issue');
 
   const topBoot = build.biosSettings.bootPriority[0];
-  const hasWorkingStorage = build.storageIds.length > 0 && !hasStorageFault;
+  const hasWorkingStorage = build.storageIds.length > 0 && !hasStorageFault && build.storageCablesConnected;
 
   if (hasBiosMisconfig) {
     return {
@@ -336,7 +344,10 @@ export function determineBootOutcome(build: PCBuildState): {
   if (!hasWorkingStorage) {
     return {
       target: 'boot_error',
-      message: 'BOOTMGR ERROR: No bootable storage device found. Insert bootable USB and set USB first in BIOS.',
+      message:
+        !build.storageCablesConnected && build.storageIds.length > 0
+          ? 'BOOTMGR ERROR: Storage SATA/M.2 cable not connected at Workbench.'
+          : 'BOOTMGR ERROR: No bootable storage device found. Insert bootable USB and set USB first in BIOS.',
     };
   }
 

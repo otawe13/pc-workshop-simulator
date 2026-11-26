@@ -5,6 +5,7 @@ import {
   Difficulty,
   FaultType,
   GameState,
+  HardwareItem,
   InventoryEntry,
   Language,
   LeaderboardCategory,
@@ -20,6 +21,7 @@ import { buildCustomerBrokenPC } from './diagnosticsEngine';
 import { getHardwareItem } from './hardwareDatabase';
 import { createEmptyPCBuild, runPOST } from './simulationEngine';
 import { createDefaultTutorialState, createTutorialStarterOrder } from './tutorialEngine';
+import { evaluateNetworkHealth } from './virtualOsEngine';
 
 // Fair identical starting capital & assets per competition rules
 export const COMPETITIVE_STARTING_CAPITAL_IDR = 15_000_000;
@@ -28,6 +30,29 @@ export function getStartingCapital(difficulty: Difficulty): number {
   if (difficulty === 'easy') return 20_000_000;
   if (difficulty === 'hard') return 10_000_000;
   return COMPETITIVE_STARTING_CAPITAL_IDR;
+}
+
+/** Deterministic daily supplier price variance (-10% to +10% after Day 1) */
+export function getDailyMarketFactor(day: number, itemId: string): number {
+  if (day <= 1) return 1;
+  let hash = day * 37;
+  for (let i = 0; i < itemId.length; i++) {
+    hash = (hash * 31 + itemId.charCodeAt(i)) % 10000;
+  }
+  const pct = ((hash % 21) - 10) / 100; // -0.10 .. +0.10
+  return Number((1 + pct).toFixed(2));
+}
+
+export function getDynamicPurchasePrice(item: HardwareItem, day: number): number {
+  const factor = getDailyMarketFactor(day, item.id);
+  return Math.round((item.purchasePrice * factor) / 1000) * 1000;
+}
+
+export function calculateDailyOperatingExpense(state: GameState): number {
+  const baseUtility = 65_000;
+  const levelScale = (state.businessLevel - 1) * 45_000;
+  const benchLights = state.upgrades.filter((u) => u.purchased).length * 12_000;
+  return baseUtility + levelScale + benchLights;
 }
 
 export const DEFAULT_UPGRADES: WorkshopUpgrade[] = [
@@ -152,7 +177,6 @@ export function calculateInventoryAssetValue(inventory: InventoryEntry[]): numbe
 }
 
 export function calculateInstalledBuildAssetValue(state: GameState): number {
-  // Only count player-owned parts installed in sandboxPC or player-funded assembly builds (no double-counting with inventory)
   const countBuild = (build: GameState['sandboxPC']): number => {
     const ids = [
       build.caseId,
@@ -163,6 +187,8 @@ export function calculateInstalledBuildAssetValue(state: GameState): number {
       build.psuId,
       ...build.ramIds,
       ...build.storageIds,
+      ...(build.addonIds ?? []),
+      ...(build.peripheralIds ?? []),
     ];
     return ids.reduce((sum, id) => {
       const item = getHardwareItem(id);
@@ -197,7 +223,7 @@ export function calculateNetWorth(state: GameState): {
 } {
   const cash = Math.round(state.cash);
   const inventoryValue = Math.round(calculateInventoryAssetValue(state.inventory));
-  const equipmentValue = 2_500_000; // Base starter workbench + diagnostic equipment valuation
+  const equipmentValue = 2_500_000;
   const upgradesValue = state.upgrades
     .filter((u) => u.purchased)
     .reduce((sum, u) => sum + u.assetValue, 0);
@@ -234,10 +260,12 @@ export function createInitialGameState(
     { itemId: 'psu_450w', quantity: 1 },
     { itemId: 'cool_stock', quantity: 2 },
     { itemId: 'cons_paste', quantity: 3 },
+    { itemId: 'addon_wifi_6e', quantity: 1 },
+    { itemId: 'addon_cable_kit', quantity: 1 },
   ];
 
   const initialState: GameState = {
-    version: 2,
+    version: 3,
     saveSlotId: 'slot_1',
     workshopName: workshopName.trim() || 'Garuda Tech Workshop',
     playerUsername: playerUsername.trim() || 'Teknisi',
@@ -251,7 +279,7 @@ export function createInitialGameState(
     completedOrdersCount: 0,
     satisfactionHistory: [],
     day: 1,
-    minuteOfDay: 480, // 08:00
+    minuteOfDay: 480,
     timeSpeed: 1,
     inventory: starterInventory,
     pendingDeliveries: [],
@@ -277,7 +305,6 @@ export function createInitialGameState(
     tutorialState: createDefaultTutorialState(true),
   };
 
-  // Seed starter tutorial assembly order + 1 diagnostic repair order so gameplay starts immediately
   initialState.orders = [
     createTutorialStarterOrder(1, lang),
     generateCustomerOrder(initialState, 2, 'PC Repair', lang),
@@ -370,6 +397,7 @@ export function generateCustomerOrder(
     const partsAllowance = highTier ? 22_000_000 : isGaming ? 11_500_000 : 6_200_000;
     const laborReward = highTier ? 1_800_000 : isGaming ? 950_000 : 550_000;
     const requiredOS: OSType = pick(['Windows 11', 'Windows 10', 'Ubuntu'], 1);
+    const wantsWifi = !highTier && seed % 3 === 0;
 
     return {
       id: `order_${Date.now()}_${seedOffset}_${Math.random().toString(36).slice(2, 6)}`,
@@ -388,8 +416,8 @@ export function generateCustomerOrder(
         ? 'Rakitan PC Gaming Ekonomis'
         : 'Rakitan PC Kantor Ringkas',
       description: isEn
-        ? `Assemble a compatible ${isGaming ? 'gaming' : 'office'} PC with >=${minRamGB}GB RAM, >=${minStorageGB}GB storage, ${requiredOS}, drivers, and verified benchmark.`
-        : `Rakit PC ${isGaming ? 'gaming' : 'kantor'} yang kompatibel dengan RAM minimal ${minRamGB}GB, penyimpanan minimal ${minStorageGB}GB, instal ${requiredOS}, seluruh driver, dan lolos uji benchmark.`,
+        ? `Assemble a compatible ${isGaming ? 'gaming' : 'office'} PC with >=${minRamGB}GB RAM, >=${minStorageGB}GB storage, ${requiredOS}, drivers, network ready, and verified benchmark.${wantsWifi ? ' Includes PCIe Wi-Fi adapter.' : ''}`
+        : `Rakit PC ${isGaming ? 'gaming' : 'kantor'} yang kompatibel dengan RAM minimal ${minRamGB}GB, penyimpanan minimal ${minStorageGB}GB, instal ${requiredOS}, seluruh driver, koneksi jaringan aktif, dan lolos uji benchmark.${wantsWifi ? ' Sertakan kartu Wi-Fi PCIe.' : ''}`,
       dialogue: isEn
         ? isGaming
           ? `"Hi! I want a custom gaming PC that handles modern games smoothly. Please install ${requiredOS}, drivers, and test thermals!"`
@@ -405,6 +433,8 @@ export function generateCustomerOrder(
         requiredOS,
         requireDrivers: true,
         requireBenchmark: true,
+        requireNetworkReady: true,
+        requiredAddonType: wantsWifi ? 'wifi' : undefined,
       },
       budget: partsAllowance + laborReward + 1_500_000,
       laborReward,
@@ -429,18 +459,19 @@ export function generateCustomerOrder(
       type,
       title: isEn ? `Fresh ${targetOS} & Driver Setup` : `Instalasi Bersih ${targetOS} & Driver`,
       description: isEn
-        ? `Prepare bootable USB, enter BIOS, partition drive, install ${targetOS}, and install all 6 driver categories.`
-        : `Siapkan USB bootable, atur BIOS, buat & format partisi, instal ${targetOS}, serta pasang seluruh 6 kategori driver.`,
+        ? `Prepare bootable USB, enter BIOS, partition drive, install ${targetOS}, complete OOBE setup, and install all 6 driver categories.`
+        : `Siapkan USB bootable, atur BIOS, buat & format partisi, instal ${targetOS}, selesaikan OOBE, serta pasang seluruh 6 kategori driver.`,
       dialogue: isEn
         ? `"My PC keeps crashing at startup. Please do a clean install of ${targetOS} with all drivers working!"`
         : `"PC saya sering crash saat baru dinyalakan. Tolong instal ulang bersih ${targetOS} beserta seluruh drivernya!"`,
       requirements: {
         requiredOS: targetOS,
         requireDrivers: true,
+        requireNetworkReady: true,
         fixAllFaults: true,
       },
-      budget: 600_000,
-      laborReward: 380_000,
+      budget: 650_000,
+      laborReward: 420_000,
       partsAllowance: 0,
       deadlineDay: state.day + 1,
       createdDay: state.day,
@@ -454,7 +485,7 @@ export function generateCustomerOrder(
 
   if (type === 'Hardware Upgrade') {
     const pc = buildCustomerBrokenPC([], 'budget');
-    pc.ramIds = ['ram_ddr4_8']; // single 8GB stick
+    pc.ramIds = ['ram_ddr4_8'];
     return {
       id: `order_${Date.now()}_${seedOffset}_${Math.random().toString(36).slice(2, 6)}`,
       orderNumber,
@@ -472,7 +503,7 @@ export function generateCustomerOrder(
         requireBenchmark: true,
       },
       budget: 1_200_000,
-      laborReward: 320_000,
+      laborReward: 340_000,
       partsAllowance: 430_000,
       deadlineDay: state.day + 2,
       createdDay: state.day,
@@ -487,23 +518,27 @@ export function generateCustomerOrder(
   // PC Repair / Troubleshooting / Maintenance
   const faultCombos: FaultType[][] = [
     ['loose_ram', 'overheating_paste'],
+    ['dust_clogged', 'overheating_paste'],
+    ['network_issue', 'missing_drivers'],
     ['loose_cables', 'bios_misconfig'],
     ['faulty_psu'],
     ['damaged_connector', 'missing_drivers'],
     ['bootloader_failure'],
-    ['cooler_failure', 'overheating_paste'],
+    ['cooler_failure', 'dust_clogged'],
     ['faulty_storage', 'corrupted_os'],
   ];
-  const chosenFaults = pick(faultCombos, 5);
+  const chosenFaults = type === 'Maintenance'
+    ? (['dust_clogged', 'overheating_paste'] as FaultType[])
+    : pick(faultCombos, 5);
   const pc = buildCustomerBrokenPC(chosenFaults, state.businessLevel >= 2 ? 'mid' : 'budget');
-  const laborReward = 350_000 + chosenFaults.length * 140_000;
+  const laborReward = 380_000 + chosenFaults.length * 150_000;
   const partsAllowance = chosenFaults.includes('faulty_psu')
     ? 700_000
     : chosenFaults.includes('faulty_storage')
     ? 820_000
     : chosenFaults.includes('cooler_failure')
     ? 250_000
-    : 100_000;
+    : 120_000;
 
   return {
     id: `order_${Date.now()}_${seedOffset}_${Math.random().toString(36).slice(2, 6)}`,
@@ -512,34 +547,43 @@ export function generateCustomerOrder(
     type,
     title: isEn
       ? type === 'Maintenance'
-        ? 'Thermal Cleaning & Maintenance'
+        ? 'Dust & Thermal Maintenance'
+        : chosenFaults.includes('network_issue')
+        ? 'Network & IP Configuration Repair'
         : chosenFaults.includes('faulty_psu') || chosenFaults.includes('loose_cables')
         ? 'No-Power Computer Repair'
         : 'System Diagnostics & Repair'
       : type === 'Maintenance'
-      ? 'Pembersihan & Perawatan Suhu'
+      ? 'Pembersihan Debu & Perawatan Suhu'
+      : chosenFaults.includes('network_issue')
+      ? 'Perbaikan Jaringan & IP Adapter'
       : chosenFaults.includes('faulty_psu') || chosenFaults.includes('loose_cables')
       ? 'Perbaikan PC Mati Total'
       : 'Diagnostik & Perbaikan Sistem',
     description: isEn
-      ? 'Diagnose hidden hardware/software faults using workshop tools, fix every root cause, and pass POST & stability check.'
-      : 'Diagnosa kerusakan tersembunyi dengan alat bengkel, perbaiki setiap sumber masalah, lalu pastikan lolos POST & uji stabilitas.',
+      ? 'Diagnose hidden hardware/software/network faults using workshop tools, fix every root cause, and pass POST & stability check.'
+      : 'Diagnosa kerusakan tersembunyi (hardware/OS/debu/jaringan) dengan alat bengkel, perbaiki setiap sumber masalah, lalu pastikan lolos POST.',
     dialogue: isEn
-      ? chosenFaults.includes('overheating_paste') || chosenFaults.includes('cooler_failure')
-        ? '"My computer gets way too hot and shuts off after a few minutes!"'
+      ? chosenFaults.includes('network_issue')
+        ? '"My PC turns on fine, but internet shows Limited / 169.254.x.x and ping 8.8.8.8 fails!"'
+        : chosenFaults.includes('dust_clogged') || chosenFaults.includes('overheating_paste')
+        ? '"My computer is dusty, very loud, and shuts down from heat after a few minutes!"'
         : chosenFaults.includes('faulty_psu') || chosenFaults.includes('loose_cables')
         ? '"My computer suddenly stopped turning on this morning. Please figure out what died!"'
         : '"Something is wrong with my PC — it refuses to boot properly. Can you diagnose and repair it?"'
-      : chosenFaults.includes('overheating_paste') || chosenFaults.includes('cooler_failure')
-      ? '"Komputer saya cepat sekali panas dan tiba-tiba mati sendiri setelah beberapa menit dipakai!"'
+      : chosenFaults.includes('network_issue')
+      ? '"PC saya menyala normal, tapi internet error Limited / IP 169.254.x.x dan ping selalu gagal!"'
+      : chosenFaults.includes('dust_clogged') || chosenFaults.includes('overheating_paste')
+      ? '"Komputer saya kotor berdebu, kipas bising, dan cepat overheat saat dipakai!"'
       : chosenFaults.includes('faulty_psu') || chosenFaults.includes('loose_cables')
       ? '"Komputer saya tiba-tiba mati total pagi ini dan tidak mau menyala. Tolong dicek kerusakannya ya!"'
       : '"PC saya bermasalah dan gagal masuk ke sistem operasi. Tolong didiagnosa dan diperbaiki!"',
     requirements: {
       fixAllFaults: true,
       requireBenchmark: type === 'Maintenance',
+      requireNetworkReady: chosenFaults.includes('network_issue'),
     },
-    budget: laborReward + partsAllowance + 400_000,
+    budget: laborReward + partsAllowance + 450_000,
     laborReward,
     partsAllowance,
     deadlineDay: state.day + 2,
@@ -581,7 +625,7 @@ export function validateOrderCompletion(
     reasons.push(
       isEn
         ? `Unresolved fault(s): ${unresolvedFaults.map((f) => f.label).join(', ')}`
-        : `Kerusakan belum selesai: ${unresolvedFaults.length} masalah tersisa`
+        : `Kerusakan belum selesai: ${unresolvedFaults.map((f) => f.label).join(', ')}`
     );
   }
 
@@ -637,6 +681,32 @@ export function validateOrderCompletion(
       );
     }
   }
+  if (order.requirements.requireNetworkReady) {
+    const netHealth = evaluateNetworkHealth(build);
+    if (!netHealth.online) {
+      reasons.push(isEn ? `Network not ready: ${netHealth.reasonEn}` : `Jaringan belum aktif: ${netHealth.reasonId}`);
+    }
+  }
+  if (order.requirements.requiredAddonType) {
+    const addons = (build.addonIds ?? []).map((id) => getHardwareItem(id)).filter(Boolean);
+    if (!addons.some((a) => a?.addonType === order.requirements.requiredAddonType)) {
+      reasons.push(
+        isEn
+          ? `Missing requested expansion add-on (${order.requirements.requiredAddonType}).`
+          : `Komponen ekspansi (${order.requirements.requiredAddonType}) belum dipasang.`
+      );
+    }
+  }
+  if (order.requirements.requiredPeripheralType) {
+    const peris = (build.peripheralIds ?? []).map((id) => getHardwareItem(id)).filter(Boolean);
+    if (!peris.some((p) => p?.peripheralType === order.requirements.requiredPeripheralType)) {
+      reasons.push(
+        isEn
+          ? `Missing requested external peripheral (${order.requirements.requiredPeripheralType}).`
+          : `Perangkat eksternal (${order.requirements.requiredPeripheralType}) belum disertakan.`
+      );
+    }
+  }
   if (order.requirements.requireBenchmark) {
     if (!build.benchmarks || !build.benchmarks.stabilityPassed) {
       reasons.push(
@@ -647,7 +717,6 @@ export function validateOrderCompletion(
     }
   }
 
-  // Calculate installed parts sell value for new builds or upgrades
   let actualPartsCost = 0;
   if (order.type === 'PC Assembly' || order.type === 'Custom Gaming PC') {
     const partIds = [
@@ -659,6 +728,8 @@ export function validateOrderCompletion(
       build.psuId,
       ...build.ramIds,
       ...build.storageIds,
+      ...(build.addonIds ?? []),
+      ...(build.peripheralIds ?? []),
     ];
     for (const id of partIds) {
       const item = getHardwareItem(id);
@@ -666,7 +737,7 @@ export function validateOrderCompletion(
     }
   } else if (order.type === 'Hardware Upgrade') {
     actualPartsCost = order.partsAllowance;
-  } else if (order.type === 'PC Repair' || order.type === 'Troubleshooting') {
+  } else if (order.type === 'PC Repair' || order.type === 'Troubleshooting' || order.type === 'Maintenance') {
     actualPartsCost = order.partsAllowance;
   }
 
@@ -683,7 +754,6 @@ export function sortLeaderboardRecords(
   season: LeaderboardSeason
 ): LeaderboardRecord[] {
   const filtered = records.filter((r) => r.season === season || season === 'all_time');
-  // Deduplicate by username + workshopName when combining into all_time view, picking best metrics
   const byPlayer = new Map<string, LeaderboardRecord>();
   for (const rec of filtered) {
     const key = `${rec.username.toLowerCase()}::${rec.workshopName.toLowerCase()}`;

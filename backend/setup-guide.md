@@ -7,10 +7,11 @@
    - **Project URL** (`https://your-project-id.supabase.co`)
    - **Publishable Key** (`sb_publishable_...` or legacy **anon public** key)
    - Never use `service_role` or `sb_secret_...` keys in frontend code or `VITE_*` variables.
-5. Enter them in the AI Studio **Secrets / Environment Variables** panel (or local `.env` file):
+5. Enter them in **Cloudflare Pages -> Settings -> Environment Variables** (or local `.env` / AI Studio Secrets):
    ```env
    VITE_SUPABASE_URL="https://your-project-id.supabase.co"
    VITE_SUPABASE_PUBLISHABLE_KEY="your-publishable-or-anon-key"
    ```
-6. Restart the dev server (`npm run dev` or AI Studio preview restart).
+   > **Important:** `VITE_SUPABASE_URL` must be the base Project URL (`https://your-project-id.supabase.co`) **without** `/rest/v1` or trailing paths.
+6. Trigger a fresh production build/redeploy (`npm run build`) or restart the dev server (`npm run dev`).
 7. Offline gameplay and `localStorage` saves continue working at all times; when Supabase is configured, open **Business Management Computer -> Rankings & Cloud** to sign in and sync your score to the **GLOBAL ONLINE LEADERBOARD**.

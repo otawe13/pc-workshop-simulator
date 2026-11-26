@@ -9,6 +9,7 @@ import {
   GameSettings,
   GameState,
   HardwareItem,
+  InspectablePartKey,
   InventoryEntry,
   LeaderboardRecord,
   PCBuildState,
@@ -17,6 +18,7 @@ import {
 import { WorkshopSceneController } from './three/WorkshopScene';
 import {
   calculateBusinessLevel,
+  calculateDailyOperatingExpense,
   calculateNetWorth,
   createInitialGameState,
   generateCustomerOrder,
@@ -37,6 +39,7 @@ import {
 import {
   getOnlineSession,
   OnlinePlayerAccount,
+  subscribeSupabaseAuthChange,
   syncLeaderboardToCloud,
 } from './engine/supabaseClient';
 import { audioManager } from './engine/audioManager';
@@ -81,6 +84,8 @@ export default function App() {
 
   const [activeStation, setActiveStation] = useState<StationId>('overview');
   const [assemblyStage, setAssemblyStage] = useState<AssemblyStageId>('preparation');
+  const [explodedView, setExplodedView] = useState(0);
+  const [inspectedPartKey, setInspectedPartKey] = useState<InspectablePartKey | null>(null);
   const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
   const [dockCollapsed, setDockCollapsed] = useState(false);
   const [fps, setFps] = useState(60);
@@ -143,19 +148,29 @@ export default function App() {
     }
   }, [settings, lang, screenState]);
 
-  // Check Supabase session on mount (never blocks offline startup)
+  // Check Supabase session & subscribe to OAuth/auth changes (never blocks offline startup)
   useEffect(() => {
     getOnlineSession()
       .then((acc) => {
         if (acc) setOnlineAccount(acc);
       })
       .catch(() => {});
+    const unsubscribe = subscribeSupabaseAuthChange((acc) => {
+      setOnlineAccount(acc);
+    });
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const handleSelectStation = useCallback((station: StationId) => {
     audioManager.playClick();
     setActiveStation(station);
     setShowMonitor(false);
+    if (station !== 'workbench') {
+      setExplodedView(0);
+      sceneRef.current?.setExplodedView(0);
+    }
 
     if (station !== 'overview') {
       visitedStationsRef.current.add(station);
@@ -197,6 +212,16 @@ export default function App() {
     }
   }, []);
 
+  const handleInspectPart = useCallback(
+    (partKey: InspectablePartKey | null) => {
+      setInspectedPartKey(partKey);
+      if (partKey) {
+        handleSelectStation('workbench');
+      }
+    },
+    [handleSelectStation]
+  );
+
   const handleCameraMoved = useCallback(() => {
     setGameState((prev) => {
       const tut = prev.tutorialState;
@@ -211,6 +236,8 @@ export default function App() {
   // Stable Three.js ref callbacks
   const selectStationRef = useRef(handleSelectStation);
   selectStationRef.current = handleSelectStation;
+  const inspectPartRef = useRef(handleInspectPart);
+  inspectPartRef.current = handleInspectPart;
   const cameraMovedRef = useRef(handleCameraMoved);
   cameraMovedRef.current = handleCameraMoved;
 
@@ -220,6 +247,7 @@ export default function App() {
       canvasMountRef.current,
       {
         onSelectStation: (st) => selectStationRef.current(st),
+        onInspectPart: (key) => inspectPartRef.current(key),
         onHoverStation: (lbl) => setHoveredLabel(lbl),
         onFpsUpdate: (val) => setFps(val),
         onCameraMoved: () => cameraMovedRef.current(),
@@ -349,53 +377,78 @@ export default function App() {
     []
   );
 
-  // Trigger End-of-Day report and reset to next morning
-  const triggerEndOfDay = useCallback((curr: GameState): { nextState: GameState; report: DailyReport } => {
-    const todayTxs = curr.transactions.filter((t) => t.day === curr.day);
-    const rev = todayTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-    const exp = todayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  // Trigger End-of-Day report, deduct daily operating overhead, and pause clock
+  const triggerEndOfDay = useCallback(
+    (curr: GameState): { nextState: GameState; report: DailyReport } => {
+      const opExpense = calculateDailyOperatingExpense(curr);
+      const todayTxs = curr.transactions.filter((t) => t.day === curr.day);
+      const rev = todayTxs.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+      const exp = todayTxs.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0) + opExpense;
 
-    let repDelta = 0;
-    const updatedOrders = curr.orders.map((o) => {
-      if (o.status !== 'Delivered' && o.status !== 'Cancelled' && o.status !== 'New' && curr.day >= o.deadlineDay) {
-        repDelta -= 5;
-        return { ...o, status: 'Cancelled' as const };
-      }
-      return o;
-    });
+      let repDelta = 0;
+      const updatedOrders = curr.orders.map((o) => {
+        if (o.status !== 'Delivered' && o.status !== 'Cancelled' && o.status !== 'New' && curr.day >= o.deadlineDay) {
+          repDelta -= 5;
+          return { ...o, status: 'Cancelled' as const };
+        }
+        return o;
+      });
 
-    const newRep = Math.max(0, Math.min(100, curr.reputation + repDelta));
-    const report: DailyReport = {
-      day: curr.day,
-      customersServed: curr.orders.filter((o) => o.status === 'Delivered' && o.createdDay <= curr.day).length,
-      jobsCompleted: curr.completedOrdersCount,
-      revenue: rev,
-      expenses: exp,
-      netProfit: rev - exp,
-      reputationDelta: repDelta,
-    };
+      const newRep = Math.max(0, Math.min(100, curr.reputation + repDelta));
+      const report: DailyReport = {
+        day: curr.day,
+        customersServed: curr.orders.filter((o) => o.status === 'Delivered' && o.createdDay <= curr.day).length,
+        jobsCompleted: curr.completedOrdersCount,
+        revenue: rev,
+        expenses: exp,
+        netProfit: rev - exp,
+        reputationDelta: repDelta,
+      };
 
-    const nextState: GameState = {
-      ...curr,
-      orders: updatedOrders,
-      reputation: newRep,
-      businessLevel: calculateBusinessLevel(newRep, curr.completedOrdersCount),
-      dailyReports: [report, ...curr.dailyReports],
-      timeSpeed: 0,
-    };
+      const nextState: GameState = {
+        ...curr,
+        cash: Math.max(0, curr.cash - opExpense),
+        totalExpenses: curr.totalExpenses + opExpense,
+        orders: updatedOrders,
+        reputation: newRep,
+        businessLevel: calculateBusinessLevel(newRep, curr.completedOrdersCount),
+        dailyReports: [report, ...curr.dailyReports],
+        transactions: [
+          {
+            id: `tx_op_${Date.now()}`,
+            day: curr.day,
+            minute: 1080,
+            type: 'expense',
+            category: 'workshop_expense',
+            description:
+              lang === 'en'
+                ? `Day ${curr.day} electricity & shop utilities`
+                : `Listrik & operasional bengkel Hari ${curr.day}`,
+            amount: opExpense,
+          },
+          ...curr.transactions,
+        ],
+        timeSpeed: 0,
+      };
 
-    return { nextState, report };
-  }, []);
+      return { nextState, report };
+    },
+    [lang]
+  );
 
-  // In-game clock & delivery arrival loop
+  // In-game clock & delivery arrival loop (scaled by configurable dayDurationMinutes)
   useEffect(() => {
     if (screenState !== 'playing' || gameState.timeSpeed === 0 || dailyReportModal) return;
 
-    const intervalMs = gameState.timeSpeed === 2 ? 450 : 950;
+    const dayDurationMin = settings.dayDurationMinutes ?? 30;
+    const intervalMs = Math.max(
+      120,
+      Math.round((dayDurationMin * 60 * 1000) / (600 * gameState.timeSpeed))
+    );
     const timer = window.setInterval(() => {
       setGameState((prev) => {
         if (prev.timeSpeed === 0) return prev;
-        const nextMinute = prev.minuteOfDay + 5;
+        const nextMinute = prev.minuteOfDay + 1;
 
         let nextInventory = [...prev.inventory];
         let nextNotifs = prev.notifications;
@@ -473,7 +526,15 @@ export default function App() {
     }, intervalMs);
 
     return () => window.clearInterval(timer);
-  }, [screenState, gameState.timeSpeed, dailyReportModal, triggerEndOfDay, pushNotification, lang]);
+  }, [
+    screenState,
+    gameState.timeSpeed,
+    settings.dayDurationMinutes,
+    dailyReportModal,
+    triggerEndOfDay,
+    pushNotification,
+    lang,
+  ]);
 
   // Handlers
   const startNewGame = (workshopName: string, playerUsername: string, difficulty: Difficulty) => {
@@ -571,6 +632,12 @@ export default function App() {
       if (item.category === 'storage' && b.storageIds.length >= 4) {
         return lang === 'en' ? 'Maximum storage bays reached.' : 'Kapasitas slot penyimpanan sudah penuh.';
       }
+      if (item.category === 'addon' && (b.addonIds ?? []).length >= 4) {
+        return lang === 'en' ? 'Maximum 4 expansion cards reached.' : 'Maksimal 4 kartu ekspansi terpasang.';
+      }
+      if (item.category === 'peripheral' && (b.peripheralIds ?? []).length >= 6) {
+        return lang === 'en' ? 'Maximum 6 peripherals reached.' : 'Maksimal 6 periferal meja kerja terpasang.';
+      }
 
       if (item.category === 'case') returnOldId = b.caseId;
       if (item.category === 'motherboard') returnOldId = b.motherboardId;
@@ -605,7 +672,13 @@ export default function App() {
             next.faults = next.faults.map((f) => (f.type === 'cooler_failure' ? { ...f, resolved: true } : f));
           } else if (item.category === 'ram') {
             next.ramIds = [...next.ramIds, item.id];
-            next.faults = next.faults.map((f) => (f.type === 'missing_ram' ? { ...f, resolved: true } : f));
+            const mb = getHardwareItem(next.motherboardId);
+            const allCompat = mb ? next.ramIds.every((rid) => getHardwareItem(rid)?.ramType === mb.ramType) : true;
+            next.faults = next.faults.map((f) =>
+              f.type === 'missing_ram' || (f.type === 'incompatible_ram' && allCompat)
+                ? { ...f, resolved: true }
+                : f
+            );
           } else if (item.category === 'storage') {
             next.storageIds = [...next.storageIds, item.id];
             next.faults = next.faults.map((f) => (f.type === 'faulty_storage' ? { ...f, resolved: true } : f));
@@ -615,6 +688,12 @@ export default function App() {
           } else if (item.category === 'psu') {
             next.psuId = item.id;
             next.faults = next.faults.map((f) => (f.type === 'faulty_psu' ? { ...f, resolved: true } : f));
+          } else if (item.category === 'addon') {
+            next.addonIds = [...(next.addonIds ?? []), item.id];
+          } else if (item.category === 'peripheral') {
+            next.peripheralIds = [...(next.peripheralIds ?? []), item.id];
+            if (item.peripheralType === 'monitor') next.monitorConnected = true;
+            if (item.peripheralType === 'keyboard') next.keyboardConnected = true;
           }
           return next;
         };
@@ -669,9 +748,25 @@ export default function App() {
       } else if (category === 'ram') {
         removedId = nextBuild.ramIds[index] ?? null;
         nextBuild.ramIds = nextBuild.ramIds.filter((_, i) => i !== index);
+        const mb = getHardwareItem(nextBuild.motherboardId);
+        if (
+          nextBuild.ramIds.length > 0 &&
+          mb &&
+          nextBuild.ramIds.every((rid) => getHardwareItem(rid)?.ramType === mb.ramType)
+        ) {
+          nextBuild.faults = nextBuild.faults.map((f) =>
+            f.type === 'incompatible_ram' ? { ...f, resolved: true } : f
+          );
+        }
       } else if (category === 'storage') {
         removedId = nextBuild.storageIds[index] ?? null;
         nextBuild.storageIds = nextBuild.storageIds.filter((_, i) => i !== index);
+      } else if (category === 'addon') {
+        removedId = (nextBuild.addonIds ?? [])[index] ?? null;
+        nextBuild.addonIds = (nextBuild.addonIds ?? []).filter((_, i) => i !== index);
+      } else if (category === 'peripheral') {
+        removedId = (nextBuild.peripheralIds ?? [])[index] ?? null;
+        nextBuild.peripheralIds = (nextBuild.peripheralIds ?? []).filter((_, i) => i !== index);
       }
 
       if (!removedId) return prev;
@@ -752,7 +847,7 @@ export default function App() {
       setLocalLeaderboard(lb);
       saveGameToSlot(nextState, 'autosave');
       setSaveSlots(listSaveSlots());
-      if (onlineAccount) void syncLeaderboardToCloud(nextState);
+      if (onlineAccount) void syncLeaderboardToCloud(nextState, lang);
       return nextState;
     });
   };
@@ -982,7 +1077,7 @@ export default function App() {
     (activeStation === 'overview' || activeStation === 'workbench');
 
   return (
-    <div className={`relative w-screen h-screen overflow-hidden bg-[#090d16] select-none ${uiScaleClass}`}>
+    <div className={`relative w-screen h-[100dvh] overflow-hidden bg-[#090d16] select-none ${uiScaleClass}`}>
       {/* Dedicated Isolated WebGL Three.js Container */}
       <div
         ref={canvasMountRef}
@@ -1110,6 +1205,13 @@ export default function App() {
               state={gameState}
               currentBuild={currentPCBuild}
               activeStage={assemblyStage}
+              explodedView={explodedView}
+              inspectedPartKey={inspectedPartKey}
+              onChangeExplodedView={(val) => {
+                setExplodedView(val);
+                sceneRef.current?.setExplodedView(val);
+              }}
+              onClearInspectedPart={() => setInspectedPartKey(null)}
               onChangeStage={setAssemblyStage}
               onUpdateBuild={updateCurrentPCBuild}
               onInstallFromInventory={installFromInventory}
@@ -1149,6 +1251,19 @@ export default function App() {
               localLeaderboard={localLeaderboard}
               onlineAccount={onlineAccount}
               onOnlineAccountChanged={setOnlineAccount}
+              onUpdatePlayerIdentity={(username, workshopName) =>
+                setGameState((p) => ({
+                  ...p,
+                  playerUsername: username,
+                  workshopName,
+                }))
+              }
+              onLoadCloudState={(loadedState) => {
+                setGameState(loadedState);
+                saveGameToSlot(loadedState, 'autosave');
+                setSaveSlots(listSaveSlots());
+                audioManager.playConfirm();
+              }}
               onCheckoutCart={handleCheckoutCart}
               onSellInventoryItem={handleSellInventoryItem}
               onPurchaseUpgrade={handlePurchaseUpgrade}
@@ -1173,6 +1288,20 @@ export default function App() {
               showHardwareEducation={settings.showHardwareEducation ?? true}
               build={currentPCBuild}
               onUpdateBuild={updateCurrentPCBuild}
+              onCmdUsed={() =>
+                setGameState((p) =>
+                  p.tutorialState
+                    ? { ...p, tutorialState: { ...p.tutorialState, ranCmdCommand: true } }
+                    : p
+                )
+              }
+              onNetworkConfigured={() =>
+                setGameState((p) =>
+                  p.tutorialState
+                    ? { ...p, tutorialState: { ...p.tutorialState, configuredNetwork: true } }
+                    : p
+                )
+              }
               onClose={() => {
                 setShowMonitor(false);
                 if (activeStation === 'testing_station') handleSelectStation('overview');

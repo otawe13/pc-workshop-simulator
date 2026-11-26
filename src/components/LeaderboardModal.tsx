@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowDownRight, ArrowUpRight, Globe, Search, Trophy, X } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Globe, RefreshCw, Search, Trophy, X } from 'lucide-react';
 import {
   Language,
   LeaderboardCategory,
@@ -35,6 +35,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   const [globalRecords, setGlobalRecords] = useState<LeaderboardRecord[]>([]);
   const [loadingGlobal, setLoadingGlobal] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
 
   const categories: { id: LeaderboardCategory; label: string }[] =
     lang === 'en'
@@ -60,7 +61,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
     let active = true;
     setLoadingGlobal(true);
     setGlobalError(null);
-    fetchGlobalLeaderboard(season).then((res) => {
+    fetchGlobalLeaderboard(season, category, lang).then((res) => {
       if (!active) return;
       setLoadingGlobal(false);
       if (res.error) setGlobalError(res.error);
@@ -69,7 +70,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
     return () => {
       active = false;
     };
-  }, [mode, season]);
+  }, [mode, season, category, lang, retryTick]);
 
   const rawRecords = mode === 'local' ? localRecords : globalRecords;
   const sorted = sortLeaderboardRecords(rawRecords, category, season);
@@ -114,12 +115,12 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-3 sm:p-6 bg-black/75">
-      <div className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-2 sm:p-6 bg-black/75">
+      <div className="w-full max-w-5xl max-h-[92dvh] modal-landscape-shell flex flex-col bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-slate-800">
+        <div className="modal-landscape-header flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-800">
           <div>
-            <h2 className="font-display text-xl font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="font-display text-lg sm:text-xl font-bold text-slate-100 flex items-center gap-2">
               {mode === 'global' ? (
                 <Globe className="w-5 h-5 text-emerald-400" />
               ) : (
@@ -127,7 +128,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
               )}
               {mode === 'global' ? t(lang, 'lbGlobalTitle') : t(lang, 'lbLocalTitle')}
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5 landscape-hide">
               {mode === 'global' ? t(lang, 'lbGlobalDesc') : t(lang, 'lbLocalDesc')}
             </p>
           </div>
@@ -135,20 +136,20 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             type="button"
             aria-label="Close Leaderboard"
             onClick={onClose}
-            className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+            className="touch-target p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Mode, Season & Search Controls */}
-        <div className="p-4 border-b border-slate-800 space-y-3 bg-slate-900/50">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="p-3 sm:p-4 border-b border-slate-800 space-y-2.5 sm:space-y-3 bg-slate-900/50">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-1 p-1 bg-slate-900 rounded-lg border border-slate-800">
               <button
                 type="button"
                 onClick={() => setMode('local')}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer ${
+                className={`touch-target px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer ${
                   mode === 'local' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -157,7 +158,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
               <button
                 type="button"
                 onClick={() => setMode('global')}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer ${
+                className={`touch-target px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer ${
                   mode === 'global' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -214,7 +215,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {mode === 'global' && !isSupabaseConfigured && (
-            <div className="p-5 rounded-lg bg-slate-900 border border-amber-500/40 text-sm space-y-2">
+            <div className="p-5 rounded-lg bg-slate-900 border border-amber-500/40 text-sm space-y-2.5">
               <div className="font-semibold text-amber-300">
                 {lang === 'en'
                   ? 'Offline Mode Active — Global Online Backend Not Configured'
@@ -223,8 +224,15 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
               <p className="text-xs text-slate-300 leading-relaxed">
                 {lang === 'en'
                   ? `${getSupabaseStatus().reason} Offline records are never mixed into the Global Online Leaderboard.`
-                  : 'Rekor offline tidak pernah dicampur ke Papan Peringkat Global Online. Isi VITE_SUPABASE_URL & VITE_SUPABASE_PUBLISHABLE_KEY lalu jalankan skema backend/supabase-schema.sql untuk mengaktifkan Peringkat Global.'}
+                  : `${getSupabaseStatus().reason ?? ''} Rekor offline tidak pernah dicampur ke Papan Peringkat Global Online. Isi VITE_SUPABASE_URL & VITE_SUPABASE_PUBLISHABLE_KEY lalu jalankan skema backend/supabase-schema.sql untuk mengaktifkan Peringkat Global.`}
               </p>
+              <button
+                type="button"
+                onClick={() => setMode('local')}
+                className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold cursor-pointer"
+              >
+                {t(lang, 'openLocalLb')}
+              </button>
             </div>
           )}
 
@@ -234,9 +242,29 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             </div>
           )}
 
-          {mode === 'global' && globalError && (
-            <div className="p-4 rounded-lg bg-rose-950/40 border border-rose-500/40 text-xs text-rose-300">
-              {globalError}
+          {mode === 'global' && !loadingGlobal && globalError && (
+            <div className="p-4 rounded-lg bg-rose-950/40 border border-rose-500/40 text-xs text-rose-200 space-y-3">
+              <div className="font-semibold text-rose-300">
+                {lang === 'en' ? 'Failed to Load Global Online Leaderboard' : 'Gagal Memuat Papan Peringkat Global Online'}
+              </div>
+              <p className="leading-relaxed text-rose-200/90">{globalError}</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRetryTick((n) => n + 1)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  {lang === 'en' ? 'Retry' : 'Coba Lagi'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMode('local')}
+                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium cursor-pointer"
+                >
+                  {t(lang, 'openLocalLb')}
+                </button>
+              </div>
             </div>
           )}
 
@@ -304,9 +332,17 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
 
           {/* Ranking Table */}
           {filtered.length === 0 ? (
-            <div className="text-center py-10 text-sm text-slate-400 border border-dashed border-slate-800 rounded-lg">
-              {mode === 'global' ? t(lang, 'noLbRecordsGlobal') : t(lang, 'noLbRecordsLocal')}
-            </div>
+            mode === 'global' && (!isSupabaseConfigured || loadingGlobal || Boolean(globalError)) ? null : (
+              <div className="text-center py-10 text-sm text-slate-400 border border-dashed border-slate-800 rounded-lg">
+                {search.trim() && rawRecords.length > 0
+                  ? lang === 'en'
+                    ? 'No players match your search query.'
+                    : 'Tidak ada pemain atau bengkel yang cocok dengan pencarian Anda.'
+                  : mode === 'global'
+                  ? t(lang, 'noLbRecordsGlobal')
+                  : t(lang, 'noLbRecordsLocal')}
+              </div>
+            )
           ) : (
             <div className="overflow-x-auto border border-slate-800 rounded-lg">
               <table className="w-full text-left text-xs">

@@ -4,7 +4,9 @@ import {
   BookOpen,
   CheckCircle2,
   Monitor,
+  Sparkles,
   Stethoscope,
+  Wind,
   Wrench,
   X,
   ZoomIn,
@@ -126,18 +128,19 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
 
   const postStatus = currentOrder ? runPOST(currentOrder.pcBuild) : null;
   const eduPsu = getEducationEntry('psu', lang);
+  const hasNetworkFault = currentOrder?.pcBuild.faults.some((f) => f.type === 'network_issue' && !f.resolved);
 
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-black/70">
-      <div className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-30 flex items-center justify-center p-2 sm:p-6 bg-black/70">
+      <div className="w-full max-w-5xl max-h-[92vh] modal-landscape-shell flex flex-col bg-[#0c1220] border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 border-b border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-3 sm:py-4 modal-landscape-header border-b border-slate-800">
           <div>
-            <h2 className="font-display text-lg font-bold text-slate-100 flex items-center gap-2">
+            <h2 className="font-display text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
               <Stethoscope className="w-5 h-5 text-amber-400" />
               {t(lang, 'diagTitle')}
             </h2>
-            <p className="text-xs text-slate-400">{t(lang, 'diagSubtitle')}</p>
+            <p className="text-xs text-slate-400 landscape-hide">{t(lang, 'diagSubtitle')}</p>
           </div>
           <div className="flex items-center gap-2">
             {onCameraPreset && (
@@ -148,27 +151,27 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                   setCloseup(next);
                   onCameraPreset(next ? 'repair_closeup' : 'repair_table');
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-sky-300 font-medium cursor-pointer"
+                className="touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-sky-300 font-medium cursor-pointer"
               >
                 <ZoomIn className="w-3.5 h-3.5" />
-                {closeup ? t(lang, 'overviewCameraBtn') : t(lang, 'closeupCameraBtn')}
+                <span className="hidden sm:inline">{closeup ? t(lang, 'overviewCameraBtn') : t(lang, 'closeupCameraBtn')}</span>
               </button>
             )}
             {showHardwareEducation && (
               <button
                 type="button"
                 onClick={() => setShowEdu((v) => !v)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-emerald-300 font-medium cursor-pointer"
+                className="touch-target flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-emerald-300 font-medium cursor-pointer"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                {t(lang, 'hardwareEduToggle')}
+                <span className="hidden sm:inline">{t(lang, 'hardwareEduToggle')}</span>
               </button>
             )}
             <button
               type="button"
               aria-label="Close Diagnostics"
               onClick={onClose}
-              className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
+              className="touch-target p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -185,8 +188,8 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
         {!currentOrder ? (
           <div className="p-10 text-center text-sm text-slate-400">{t(lang, 'noRepairOrders')}</div>
         ) : (
-          <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-            {/* Column 1: Order Select & Diagnostic Tools */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Column 1: Order Select & 10 Diagnostic Tools */}
             <div className="space-y-3">
               <div>
                 <label htmlFor="diag-order-sel" className="block text-xs text-slate-400 mb-1">
@@ -213,28 +216,30 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
 
               <div className="space-y-1.5">
                 <div className="text-xs font-semibold text-slate-300">{t(lang, 'selectDiagTool')}</div>
-                {DIAGNOSTIC_TOOLS.map((tool) => {
-                  const used = currentOrder.usedDiagnosticTools.includes(tool.id);
-                  const meta = getLocalizedToolMeta(tool.id, tool.name, tool.shortDesc, lang);
-                  return (
-                    <button
-                      key={tool.id}
-                      type="button"
-                      onClick={() => handleRunTool(tool.id)}
-                      className={`w-full text-left p-2.5 rounded-lg border transition-colors cursor-pointer ${
-                        used
-                          ? 'bg-sky-950/30 border-sky-500/40 text-slate-100'
-                          : 'bg-slate-900 border-slate-800 hover:border-slate-600 text-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between text-xs font-semibold">
-                        <span>{meta.name}</span>
-                        {used && <span className="text-[10px] text-sky-400">{t(lang, 'testedTag')}</span>}
-                      </div>
-                      <div className="text-[11px] text-slate-400 mt-0.5">{meta.shortDesc}</div>
-                    </button>
-                  );
-                })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5 max-h-[340px] overflow-y-auto pr-1">
+                  {DIAGNOSTIC_TOOLS.map((tool) => {
+                    const used = currentOrder.usedDiagnosticTools.includes(tool.id);
+                    const meta = getLocalizedToolMeta(tool.id, tool.name, tool.shortDesc, lang);
+                    return (
+                      <button
+                        key={tool.id}
+                        type="button"
+                        onClick={() => handleRunTool(tool.id)}
+                        className={`touch-target w-full text-left p-2.5 rounded-lg border transition-colors cursor-pointer ${
+                          used
+                            ? 'bg-sky-950/30 border-sky-500/40 text-slate-100'
+                            : 'bg-slate-900 border-slate-800 hover:border-slate-600 text-slate-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs font-semibold">
+                          <span>{meta.name}</span>
+                          {used && <span className="text-[10px] text-sky-400">{t(lang, 'testedTag')}</span>}
+                        </div>
+                        <div className="text-[11px] text-slate-400 mt-0.5">{meta.shortDesc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -257,20 +262,13 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                 </div>
               )}
 
-              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 min-h-[190px] max-h-[260px] overflow-y-auto space-y-2 text-xs font-mono-num">
+              <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 min-h-[180px] max-h-[260px] overflow-y-auto space-y-2 text-xs font-mono-num">
                 {currentOrder.discoveredClues.length === 0 ? (
                   <div className="text-slate-500">{t(lang, 'runToolHint')}</div>
                 ) : (
                   currentOrder.discoveredClues.map((clue, i) => {
                     const isWarning =
-                      clue.includes('FAIL') ||
-                      clue.includes('101°C') ||
-                      clue.includes('corrupted') ||
-                      clue.includes('Open') ||
-                      clue.includes('half') ||
-                      clue.includes('0 modules') ||
-                      clue.includes('Missing') ||
-                      clue.includes('Legacy');
+                      /FAIL|101°C|corrupted|Open|half|0 modules|Missing|Legacy|Debu|APIPA|kotor|bermasalah|putus/i.test(clue);
                     return (
                       <div
                         key={i}
@@ -302,10 +300,16 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                 </div>
               )}
 
+              {hasNetworkFault && (
+                <div className="p-2.5 rounded-lg bg-amber-950/30 border border-amber-500/40 text-[11px] text-amber-200">
+                  {t(lang, 'networkFixHint')}
+                </div>
+              )}
+
               <button
                 type="button"
                 onClick={() => onOpenMonitorForOrder(currentOrder.id)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold cursor-pointer"
+                className="touch-target w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold cursor-pointer"
               >
                 <Monitor className="w-4 h-4" />
                 {t(lang, 'openPcScreenBtn')}
@@ -313,11 +317,53 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
             </div>
 
             {/* Column 3: Repair Actions */}
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
                 <Wrench className="w-4 h-4 text-emerald-400" />
                 {t(lang, 'handsOnRepairsTitle')}
               </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  applyBuildFix(
+                    lang === 'en'
+                      ? 'Blew dust out of heatsink fins, fans, and chassis filters.'
+                      : 'Debu tebal di sirip heatsink dan kipas dibersihkan dengan Air Blower.',
+                    (b) => ({
+                      ...b,
+                      dustLevel: 0,
+                      faults: b.faults.map((f) => (f.type === 'dust_clogged' ? { ...f, resolved: true } : f)),
+                    })
+                  )
+                }
+                className="touch-target w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
+              >
+                <Wind className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                <span>{t(lang, 'actCleanDust')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  applyBuildFix(
+                    lang === 'en'
+                      ? 'Brushed oxidized pins on DIMM slots and front-panel headers.'
+                      : 'Pin slot DIMM & konektor dibersihkan dengan Kuas Anti-Statis.',
+                    (b) => ({
+                      ...b,
+                      frontPanelConnected: true,
+                      faults: b.faults.map((f) =>
+                        f.type === 'damaged_connector' || f.type === 'loose_ram' ? { ...f, resolved: true } : f
+                      ),
+                    })
+                  )
+                }
+                className="touch-target w-full flex items-center gap-2 text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>{t(lang, 'actCleanContacts')}</span>
+              </button>
 
               <button
                 type="button"
@@ -332,7 +378,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                     })
                   )
                 }
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
+                className="touch-target w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
               >
                 {t(lang, 'actReseatRam')}
               </button>
@@ -352,7 +398,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                     'cons_paste'
                   )
                 }
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
+                className="touch-target w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
               >
                 {t(lang, 'actReapplyPaste')}
               </button>
@@ -362,12 +408,14 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                 onClick={() =>
                   applyBuildFix(
                     lang === 'en'
-                      ? 'Reseated 8-pin EPS, 24-pin ATX, and Front Panel PWR_SW headers.'
-                      : 'Kabel daya 8-pin EPS, 24-pin ATX & panel depan dipasang ulang.',
+                      ? 'Reseated 8-pin EPS, 24-pin ATX, SATA, and Front Panel PWR_SW headers.'
+                      : 'Kabel daya 8-pin EPS, 24-pin ATX, SATA & panel depan dipasang ulang.',
                     (b) => ({
                       ...b,
                       cpu8PinConnected: true,
                       atx24PinConnected: true,
+                      sataPowerConnected: true,
+                      storageCablesConnected: true,
                       frontPanelConnected: true,
                       faults: b.faults.map((f) =>
                         f.type === 'loose_cables' || f.type === 'damaged_connector'
@@ -377,7 +425,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                     })
                   )
                 }
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
+                className="touch-target w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
               >
                 {t(lang, 'actReconnectCables')}
               </button>
@@ -398,7 +446,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                     })
                   )
                 }
-                className="w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
+                className="touch-target w-full text-left px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs text-slate-100 cursor-pointer"
               >
                 {t(lang, 'actFixBootloader')}
               </button>
@@ -412,7 +460,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                   const first = options[0]?.item;
                   return (
                     <div key={cat} className="flex items-center justify-between gap-2 bg-slate-900 p-2 rounded-lg border border-slate-800">
-                      <span className="text-[11px] text-slate-300">
+                      <span className="text-[11px] text-slate-300 truncate">
                         {getCategoryLabelLocalized(cat, lang)}:{' '}
                         {first ? `${first.model} (${options[0].qty})` : t(lang, 'outOfStockShort')}
                       </span>
@@ -435,8 +483,12 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                                 next.cpuFanConnected = true;
                                 next.faults = next.faults.map((f) => (f.type === 'cooler_failure' ? { ...f, resolved: true } : f));
                               } else if (cat === 'ram') {
-                                next.ramIds = [...next.ramIds, first.id];
-                                next.faults = next.faults.map((f) => (f.type === 'missing_ram' ? { ...f, resolved: true } : f));
+                                next.ramIds = next.faults.some((f) => f.type === 'incompatible_ram')
+                                  ? [first.id]
+                                  : [...next.ramIds, first.id];
+                                next.faults = next.faults.map((f) =>
+                                  f.type === 'missing_ram' || f.type === 'incompatible_ram' ? { ...f, resolved: true } : f
+                                );
                               } else if (cat === 'storage') {
                                 next.storageIds = [first.id, ...next.storageIds.slice(1)];
                                 next.faults = next.faults.map((f) => (f.type === 'faulty_storage' ? { ...f, resolved: true } : f));
@@ -449,7 +501,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({
                             first.id
                           );
                         }}
-                        className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[11px] font-medium shrink-0 cursor-pointer"
+                        className="touch-target px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[11px] font-medium shrink-0 cursor-pointer"
                       >
                         {t(lang, 'installSwapBtn')}
                       </button>

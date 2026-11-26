@@ -126,7 +126,7 @@ export const TRANSLATIONS = {
     sandboxBuild: 'Rakitan Bebas Bengkel (Sandbox)',
     targetPcLabel: 'Target PC:',
     cameraBench: 'Meja',
-    cameraCloseUp: 'Tutup Casing',
+    cameraCloseUp: 'Fokus Casing',
     cameraSocket: 'Soket CPU',
     cameraRam: 'Slot RAM',
     cameraStorage: 'Penyimpanan',
@@ -200,6 +200,14 @@ export const TRANSLATIONS = {
     compatibleLabel: 'Kompatibel',
     checkWarningsLabel: 'Periksa Peringatan',
     openTestMonitor: 'Buka Layar Uji PC',
+    explodedViewLabel: 'Exploded View (Bongkar 3D)',
+    partInspectorTitle: 'Inspektor Komponen 3D',
+    addonPeripheralsTitle: 'Kartu Ekspansi & Perangkat Eksternal',
+    dustLevelLabel: 'Tingkat Debu Casing',
+    cleanDustQuickBtn: 'Bersihkan Debu (Air Blower)',
+    actCleanDust: 'Semprot Debu Heatsink & Kipas (Air Blower)',
+    actCleanContacts: 'Bersihkan Pin Slot & Header (Cleaning Brush)',
+    networkFixHint: 'Perbaikan IP / Jaringan dilakukan di Desktop OS -> Network Settings / CMD.',
 
     // Diagnostics & Repair
     diagTitle: 'Stasiun Diagnostik & Perbaikan PC',
@@ -365,7 +373,10 @@ export const TRANSLATIONS = {
     toggleObjectives: 'Tampilkan Kartu Tujuan Saat Ini',
     toggleHardwareEdu: 'Mode Edukasi Hardware',
     toggleFps: 'Tampilkan Penghitung FPS',
-    replayTutorial: 'Ulangi Tutorial Interaktif',
+    dayDurationLabel: 'Durasi 1 Hari Kerja (Waktu Nyata)',
+    dayDurationMinutesOpt: '{min} Menit',
+    avatarLabel: 'Avatar Teknisi',
+    replayTutorial: 'Ulangi Tutorial Interaktif (11 Bab)',
     resetCareerBtn: 'Mulai Ulang Bengkel Baru',
     confirmResetMsg: 'Yakin ingin memulai karier bengkel baru dari awal?',
     yesReset: 'Ya, Mulai Ulang',
@@ -569,6 +580,14 @@ export const TRANSLATIONS = {
     compatibleLabel: 'Compatible',
     checkWarningsLabel: 'Check Warnings',
     openTestMonitor: 'Open Test Monitor',
+    explodedViewLabel: 'Exploded View (3D Tear-Down)',
+    partInspectorTitle: '3D Part Inspector',
+    addonPeripheralsTitle: 'Expansion Cards & Peripherals',
+    dustLevelLabel: 'Chassis Dust Level',
+    cleanDustQuickBtn: 'Clean Dust (Air Blower)',
+    actCleanDust: 'Blow Dust from Heatsink & Fans (Air Blower)',
+    actCleanContacts: 'Clean Slot Pins & Headers (Cleaning Brush)',
+    networkFixHint: 'Network / IPv4 fixes are performed inside Virtual Desktop -> Network Settings / CMD.',
 
     diagTitle: 'Diagnostics & Computer Repair Station',
     diagSubtitle: 'Investigate symptoms with diagnostic tools, uncover hidden faults, and perform repairs.',
@@ -729,7 +748,10 @@ export const TRANSLATIONS = {
     toggleObjectives: 'Show Current Objective Card',
     toggleHardwareEdu: 'Hardware Education Mode',
     toggleFps: 'Show FPS Counter in HUD',
-    replayTutorial: 'Replay Interactive Tutorial',
+    dayDurationLabel: 'Real-Time Duration per Game Day',
+    dayDurationMinutesOpt: '{min} Min',
+    avatarLabel: 'Technician Avatar',
+    replayTutorial: 'Replay Interactive Tutorial (11 Chapters)',
     resetCareerBtn: 'Reset Current Workshop',
     confirmResetMsg: 'Confirm starting a fresh workshop?',
     yesReset: 'Yes, Reset',
@@ -814,6 +836,8 @@ export function getCategoryLabelLocalized(category: ComponentCategory, lang: Lan
       cooler: 'CPU Cooler',
       fan: 'Case Fan',
       consumable: 'Consumables',
+      addon: 'Add-on & Expansion',
+      peripheral: 'Peripherals',
     };
     return enMap[category];
   }
@@ -828,6 +852,8 @@ export function getCategoryLabelLocalized(category: ComponentCategory, lang: Lan
     cooler: 'Pendingin CPU',
     fan: 'Kipas Casing',
     consumable: 'Bahan Habis Pakai',
+    addon: 'Komponen Tambahan',
+    peripheral: 'Perangkat Eksternal',
   };
   return idMap[category];
 }
@@ -974,6 +1000,9 @@ export function getLocalizedFaultLabel(type: FaultType, fallback: string, lang: 
     bios_misconfig: 'Konfigurasi Mode Boot BIOS Keliru',
     bootloader_failure: 'Bootloader EFI Rusak (Gagal Boot)',
     partition_issue: 'Tabel Partisi Drive Belum Diformat',
+    dust_clogged: 'Debu Tebal Menyumbat Heatsink & Kipas',
+    network_issue: 'Konfigurasi IP / Jaringan LAN Bermasalah',
+    incompatible_ram: 'Modul / Timing RAM Tidak Kompatibel',
   };
   return map[type] ?? fallback;
 }
@@ -989,6 +1018,18 @@ export function getLocalizedToolMeta(
     screwdriver: {
       name: 'Obeng Presisi',
       shortDesc: 'Buka casing dan periksa dudukan fisik komponen, kabel, serta baut pendingin.',
+    },
+    air_blower: {
+      name: 'Air Blower (Penghisap Debu)',
+      shortDesc: 'Periksa dan semprot tumpukan debu pada heatsink, radiator, serta kipas casing.',
+    },
+    cleaning_brush: {
+      name: 'Kuas Pembersih Anti-Statis',
+      shortDesc: 'Bersihkan debu halus di pin slot DIMM, PCIe, serta konektor panel depan.',
+    },
+    cable_tester: {
+      name: 'Cable & LAN Tester',
+      shortDesc: 'Uji kabel daya 24-pin/EPS, kabel SATA, serta link fisik LAN/RJ45.',
     },
     psu_tester: {
       name: 'Alat Uji Jalur PSU',
@@ -1008,7 +1049,7 @@ export function getLocalizedToolMeta(
     },
     diagnostic_usb: {
       name: 'USB Diagnostik Boot',
-      shortDesc: 'Pindai kesehatan S.M.A.R.T penyimpanan, integritas OS, dan driver.',
+      shortDesc: 'Pindai kesehatan S.M.A.R.T penyimpanan, integritas OS, jaringan, dan driver.',
     },
     recovery_media: {
       name: 'Media Pemulihan EFI',

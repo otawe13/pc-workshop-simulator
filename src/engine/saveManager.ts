@@ -1,10 +1,14 @@
 import {
+  DayDurationOption,
   GameSettings,
   GameState,
   LeaderboardRecord,
   LeaderboardSeason,
+  PCBuildState,
 } from '../types/game';
 import { calculateNetWorth } from './businessEngine';
+import { TUTORIAL_TOTAL_CHAPTERS } from './tutorialEngine';
+import { createDefaultNetworkConfig } from './virtualOsEngine';
 
 const SAVE_PREFIX = 'pcws_save_';
 const SETTINGS_KEY = 'pcws_settings_v1';
@@ -33,19 +37,27 @@ export const DEFAULT_SETTINGS: GameSettings = {
   cameraSensitivity: 1,
   cameraSpeed: 1,
   uiScale: 'normal',
+  dayDurationMinutes: 30,
+  playerAvatar: 'wrench',
   showHints: true,
   showObjectives: true,
   showHardwareEducation: true,
 };
+
+const VALID_DAY_DURATIONS: DayDurationOption[] = [10, 20, 30, 45, 60];
 
 export function loadSettings(): GameSettings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     const parsed = JSON.parse(raw);
+    const dur = VALID_DAY_DURATIONS.includes(parsed.dayDurationMinutes)
+      ? (parsed.dayDurationMinutes as DayDurationOption)
+      : 30;
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
+      dayDurationMinutes: dur,
       language: parsed.language === 'en' ? 'en' : 'id',
     };
   } catch {
@@ -59,6 +71,50 @@ export function saveSettings(settings: GameSettings): void {
   } catch {
     // ignore quota errors
   }
+}
+
+export function migratePCBuildDefaults(build: PCBuildState): PCBuildState {
+  return {
+    ...build,
+    addonIds: Array.isArray(build.addonIds) ? build.addonIds : [],
+    peripheralIds: Array.isArray(build.peripheralIds) ? build.peripheralIds : [],
+    dustLevel: typeof build.dustLevel === 'number' ? build.dustLevel : 0,
+    networkConfig: build.networkConfig ?? createDefaultNetworkConfig(false),
+    osState: {
+      ...build.osState,
+      oobeCompleted:
+        typeof build.osState?.oobeCompleted === 'boolean'
+          ? build.osState.oobeCompleted
+          : Boolean(build.osState?.setupCompleted),
+      oobeUsername: build.osState?.oobeUsername ?? 'Teknisi',
+      oobeComputerName: build.osState?.oobeComputerName ?? 'WORKSHOP-PC',
+    },
+  };
+}
+
+export function migrateLoadedGameState(parsed: GameState): GameState {
+  const next: GameState = {
+    ...parsed,
+    sandboxPC: migratePCBuildDefaults(parsed.sandboxPC),
+    orders: (parsed.orders ?? []).map((o) => ({
+      ...o,
+      pcBuild: migratePCBuildDefaults(o.pcBuild),
+    })),
+  };
+
+  if (!next.tutorialState) {
+    next.tutorialState = {
+      active: false,
+      completed: true,
+      skipped: false,
+      chapterIndex: TUTORIAL_TOTAL_CHAPTERS - 1,
+      rewardClaimed: true,
+      cameraMoved: true,
+      visitedStationCount: 6,
+      checkedBusinessPC: true,
+    };
+  }
+  return next;
 }
 
 export function saveGameToSlot(state: GameState, slotId: string): boolean {
@@ -84,20 +140,7 @@ export function loadGameFromSlot(slotId: string): { state: GameState | null; err
     if (!parsed || typeof parsed.cash !== 'number' || !Array.isArray(parsed.inventory)) {
       return { state: null, error: 'Data simpanan gagal diverifikasi.' };
     }
-    // Backward compatibility: preserve existing saves cleanly
-    if (!parsed.tutorialState) {
-      parsed.tutorialState = {
-        active: false,
-        completed: true,
-        skipped: false,
-        chapterIndex: 6,
-        rewardClaimed: true,
-        cameraMoved: true,
-        visitedStationCount: 5,
-        checkedBusinessPC: true,
-      };
-    }
-    return { state: parsed };
+    return { state: migrateLoadedGameState(parsed) };
   } catch {
     return { state: null, error: 'File simpanan rusak terdeteksi.' };
   }
